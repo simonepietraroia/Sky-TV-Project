@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from DevSign_Vote.views import test_base_template
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('test-base/', test_base_template, name='test_base')
 ]
