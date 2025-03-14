@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'DevSign_Vote/styles.css' %}">
 </head>
 <body>
-    {% load static %}
+    {% load custom_filters %}
     <div class="wrapper">
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container">
@@ -23,7 +23,13 @@
                     <ul class="navbar-nav ms-auto">
                         {% if user.is_authenticated %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'profile' %}">{{ user.username }}</a>
+                                <a class="nav-link" href="{% url 'profile' %}">
+                                    {% if user.profile_image %}
+                                        <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
+                                             class="rounded-circle navbar-profile-img" alt="Profile Image">
+                                    {% endif %}
+                                    {{ user.username }}
+                                </a>
                             </li>
                             <li class="nav-item"><a class="nav-link">Logout</a></li>
                         {% else %}

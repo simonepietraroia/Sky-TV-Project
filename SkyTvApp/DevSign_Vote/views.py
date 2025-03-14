@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import ProfileUpdateForm
+import base64
 
 def homepage(request):
     return render(request, 'DevSign_Vote/home.html')
@@ -13,11 +14,11 @@ def profile(request):
 #@login_required
 def edit_profile(request):
     if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, instance=request.user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Your profile has been updated!")
-            return redirect("profile")
+            return redirect("profile")  
     else:
         form = ProfileUpdateForm(instance=request.user)
 

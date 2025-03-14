@@ -1,12 +1,21 @@
 {% extends 'DevSign_Vote/base.html' %}
+{% load custom_filters %}  
 
 {% block content %}
-<div class="container">
+<div class="container text-center">
     <h2>Welcome, {{ user.username }}!</h2>
-    <p><strong>Email:</strong> {{ user.email }}</p>
+
+    {% if user.profile_image %}
+        <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
+            class="rounded-circle profile-img" alt="Profile Image">
+    {% endif %}
+
+    <hr>
     <p><strong>First Name:</strong> {{ user.first_name }}</p>
     <p><strong>Last Name:</strong> {{ user.last_name }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
     <p><strong>Role:</strong> {{ user.role|title }}</p>
+
     <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
 </div>
 {% endblock %}
