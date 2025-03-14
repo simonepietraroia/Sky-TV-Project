@@ -1,0 +1,15 @@
+{% extends 'DevSign_Vote/base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h2>Welcome to the Health Check System</h2>
+<p>Track your team's health and performance.</p>
+
+{% if user.is_authenticated %}
+    <p>Hello, {{ user.username }}! You are logged in.</p>
+{% else %}
+    <p>Please>log in</a> to participate.</p>
+{% endif %}
+
+{% endblock %}
