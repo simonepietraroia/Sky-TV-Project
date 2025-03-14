@@ -11,43 +11,45 @@
 <body>
     {% load custom_filters %}
     <div class="wrapper">
-        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="{% url 'home' %}" >
-                    <img src="{% static 'DevSign_Vote/sky_logo.png' %}" class="nav-logo" alt="Sky Tv's logo">
+        <nav class="navbar navbar-expand navbar-light bg-white shadow-sm">
+            <div class="container d-flex justify-content-between align-items-center flex-wrap">
+                <a class="navbar-brand" href="{% url 'home' %}">
+                    <img src="{% static 'DevSign_Vote/sky_logo.png' %}" class="nav-logo" alt="Sky TV's logo">
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        {% if user.is_authenticated %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'profile' %}">
-                                    {% if user.profile_image %}
-                                        <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
-                                             class="rounded-circle navbar-profile-img" alt="Profile Image">
-                                    {% endif %}
-                                    {{ user.username }}
-                                </a>
-                            </li>
-                            <li class="nav-item"><a class="nav-link">Logout</a></li>
-                        {% else %}
-                            <li class="nav-item"><a class="nav-link">Login</a></li>
-                            <li class="nav-item"><a class="nav-link">Sign Up</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
+                {% if user.is_authenticated %}
+                    <div class="nav-item dropdown profile-container">
+                        <a class="nav-link profile-dropdown-toggle" id="profileDropdownToggle">
+                            {% if user.profile_image %}
+                                <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
+                                     class="navbar-profile-img" alt="Profile Image">
+                            {% else %}
+                                <img src="https://via.placeholder.com/40" class="navbar-profile-img" alt="Default Profile">
+                            {% endif %}
+                        </a>
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <p><strong>{{ user.username }}</strong></p>
+                            <p>{{ user.first_name }} {{ user.last_name }}</p>
+                            <a href="{% url 'profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
+                            <a href="#" class="btn btn-danger btn-sm mt-2">Logout</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="d-flex">
+                        <a class="nav-link login-link">Login</a>
+                        <a class="nav-link signup-link">Sign Up</a>
+                    </div>
+                {% endif %}
             </div>
         </nav>
-
+    
         <div class="container mt-4">
             {% block content %}{% endblock %}
         </div>
-
+    
         <footer class="bg-dark text-white text-center py-3 mt-auto">
             <p>© 2025 DevSign_Vote | <span class="text-white">Privacy Policy</span></p>
         </footer>
+        <script src="{% static 'DevSign_Vote/script.js' %}"></script>
     </div>
 </body>
 </html>

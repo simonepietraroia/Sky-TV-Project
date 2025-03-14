@@ -1,7 +1,9 @@
+/* ✅ Ensure Full Height */
 html, body {
     height: 100%;
 }
 
+/* ✅ Structure Content with Flexbox */
 .wrapper {
     display: flex;
     flex-direction: column;
@@ -12,22 +14,37 @@ html, body {
     flex: 1;
 }
 
-.navbar-brand img.nav-logo {
-    height: 60px; 
-    width: auto;  
+/* ✅ Navbar Styling */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    height: 70px; /* Default navbar height */
+    transition: height 0.3s ease-in-out;
 }
 
+/* ✅ Navbar Logo Styling */
+.navbar-brand img.nav-logo {
+    height: 60px;  /* Keep logo size consistent */
+    width: auto;
+    transition: all 0.3s ease-in-out;
+}
+
+/* ✅ Footer Styling */
 footer {
     padding: 15px 0;
     font-size: 14px;
 }
 
+/* ✅ Navbar Links: Hover Effect */
 .nav-link:hover {
-    color: blue;  /* Change text color to blue */
+    color: blue; 
     font-weight: bold;
     transition: color 0.3s ease-in-out;
 }
 
+/* ✅ Profile Image on Profile Page */
 .profile-img {
     border-radius: 50%; 
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); 
@@ -39,10 +56,75 @@ footer {
     height: 100px;
 }
 
+/* ✅ Profile Image in Navbar */
 .navbar-profile-img {
     border-radius: 50%;
     width: 40px;
     height: 40px;
-    object-fit: cover; 
-    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3); 
+    object-fit: cover;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);  
+    cursor: pointer;
+}
+
+/* ✅ Profile Dropdown Styling */
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    background: white;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    top: 50px;
+    right: 0;
+    text-align: center;
+    min-width: 180px;
+    z-index: 1000;
+}
+
+/* ✅ Show Dropdown on Hover for Large Screens */
+@media (min-width: 769px) {
+    .nav-item.dropdown:hover .profile-dropdown {
+        display: block;
+    }
+}
+
+/* ✅ Show Dropdown on Click for Mobile & Tablet */
+@media (max-width: 768px) {
+    .profile-dropdown.show {
+        display: block;
+    }
+}
+
+/* ✅ Profile Section on the Right */
+.profile-container {
+    position: absolute;
+    right: 20px;
+}
+
+/* ✅ Navbar Adjustments for Small Screens */
+@media (max-width: 768px) {
+    .navbar {
+        height: 100px; /* ✅ Increased height for mobile screens */
+        display: flex;
+        flex-direction: column; /* ✅ Stack elements */
+        align-items: center; /* ✅ Center everything */
+        justify-content: center;
+        padding: 10px 0;
+    }
+
+    .navbar-brand {
+        position: relative;
+        left: 0;
+        transform: none;
+    }
+
+    .navbar-brand img.nav-logo {
+        height: 50px; /* ✅ Smaller logo on mobile */
+    }
+
+    .profile-container {
+        position: relative;
+        right: 0;
+        margin-top: 10px; /* ✅ Push profile below the logo */
+    }
 }
