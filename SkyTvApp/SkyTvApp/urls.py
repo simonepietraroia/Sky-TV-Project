@@ -16,9 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from DevSign_Vote.views import homepage
+from DevSign_Vote.views import homepage, profile, edit_profile
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', homepage, name='home'),
+    path("profile/", profile, name="profile"),
+    path("profile/edit/", edit_profile, name="edit_profile"),
 ]

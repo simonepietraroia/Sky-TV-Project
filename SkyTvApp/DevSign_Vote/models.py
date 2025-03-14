@@ -8,6 +8,7 @@ class User(AbstractUser):
         ('department_leader', 'Department Leader'),
         ('senior_manager', 'Senior Manager'),
     ]
+
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='engineer')
 
     groups = models.ManyToManyField(Group, related_name="custom_user_groups", blank=True)
