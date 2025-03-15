@@ -1,0 +1,15 @@
+{% extends 'DevSign_Vote/base.html' %}
+
+{% block content %}
+<h1>Welcome, {{ user.get_full_name }}</h1>
+<p>Your role: <strong>{{ user.role }}</strong></p>
+
+<!-- Team Leader Section -->
+{% if user.role == "team_leader" %}
+    <h2>Manage Your Team's Voting Sessions</h2>
+    <form action="{% url 'create_voting_session' %}" method="post">
+        {% csrf_token %}
+        <input type="text" name="title" placeholder="Session Title" required>
+        <button type="submit">Create Voting Session</button>
+    </form>
+
