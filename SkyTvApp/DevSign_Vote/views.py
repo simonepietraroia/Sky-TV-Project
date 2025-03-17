@@ -19,7 +19,7 @@ def user_login(request):
             return redirect('home')  # Redirect to home or dashboard
         else:
             messages.error(request, "Invalid username or password")
-    return render(request, 'accounts/login.html')
+    return render(request, 'DevSign_Vote/login.html')
 
 @login_required
 def profile(request):
