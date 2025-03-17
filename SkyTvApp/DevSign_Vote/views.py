@@ -9,12 +9,22 @@ def homepage(request):
     """ Renders the homepage """
     return render(request, 'DevSign_Vote/home.html')
 
+def user_login(request):
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('home')  # Redirect to home or dashboard
+        else:
+            messages.error(request, "Invalid username or password")
+    return render(request, 'accounts/login.html')
 
 @login_required
 def profile(request):
     """ Renders the user profile page """
     return render(request, "DevSign_Vote/profile.html")
-
 
 @login_required
 def edit_profile(request):
