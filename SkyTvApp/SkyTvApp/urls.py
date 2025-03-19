@@ -23,4 +23,7 @@ urlpatterns = [
     path('', homepage, name='home'),
     path("profile/", profile, name="profile"),
     path("profile/edit/", edit_profile, name="edit_profile"),
+    path("signup/", signup, name="signup"),
+    path("login/", user_login, name="login"),
+    path("logout/", user_logout, name="logout"),
 ]
