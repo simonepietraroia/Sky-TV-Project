@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import ProfileUpdateForm
 from .forms import UserRegisterForm
+from django.contrib.auth.forms import AuthenticationForm
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 

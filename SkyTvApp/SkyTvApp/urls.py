@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from DevSign_Vote.views import homepage, profile, edit_profile
+from DevSign_Vote.views import homepage, profile, edit_profile, signup, user_login, user_logout
 
 urlpatterns = [
     path('admin/', admin.site.urls),
