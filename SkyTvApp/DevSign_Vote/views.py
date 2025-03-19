@@ -6,7 +6,6 @@ from .forms import ProfileUpdateForm
 
 
 def homepage(request):
-    """ Renders the homepage """
     return render(request, 'DevSign_Vote/home.html')
 
 def user_login(request):
@@ -16,19 +15,17 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('home')  # Redirect to home or dashboard
+            return redirect('home') 
         else:
             messages.error(request, "Invalid username or password")
     return render(request, 'DevSign_Vote/login.html')
 
 @login_required
 def profile(request):
-    """ Renders the user profile page """
     return render(request, "DevSign_Vote/profile.html")
 
 @login_required
 def edit_profile(request):
-    """ Allows users to edit their profile """
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
@@ -43,9 +40,6 @@ def edit_profile(request):
 
 @login_required
 def portal_view(request):
-    """ 
-    Renders the portal page dynamically based on user roles.
-    """
     user = request.user
     context = {'user': user}
 
@@ -66,9 +60,6 @@ def portal_view(request):
 
 @login_required
 def create_voting_session(request):
-    """ 
-    Allows Team Leaders to create a new voting session.
-    """
     if request.method == "POST":
         if request.user.role != "team_leader":
             messages.error(request, "You do not have permission to create a voting session.")
@@ -84,3 +75,39 @@ def create_voting_session(request):
         return redirect('portal')
 
     return redirect('portal')
+
+def signup(request):
+    if request.method == "POST":
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Account created successfully!")
+            return redirect("home")
+    else:
+        form = UserRegisterForm()
+    return render(request, "DevSign_Vote/signup.html", {"form": form})
+
+def user_login(request):
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get("username")
+            password = form.cleaned_data.get("password")
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f"Welcome, {username}!")
+                return redirect("home")
+            else:
+                messages.error(request, "Invalid username or password.")
+        else:
+            messages.error(request, "Invalid credentials.")
+    else:
+        form = AuthenticationForm()
+    return render(request, "DevSign_Vote/login.html", {"form": form})
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, "You have been logged out.")
+    return redirect("home")
