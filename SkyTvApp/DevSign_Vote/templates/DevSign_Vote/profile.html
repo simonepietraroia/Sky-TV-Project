@@ -1,14 +1,13 @@
 {% extends 'DevSign_Vote/base.html' %}
-{% load custom_filters %}  
 
 {% block content %}
 <div class="container text-center">
     <h2>Welcome, {{ user.username }}!</h2>
 
-    {% if user.profile_image %}
-    <img src="{{ user.profile_image.url }}" class="profile-img" alt="Profile Picture">
+    {% if profile_image_base64 %}
+        <img src="data:image/jpeg;base64,{{ profile_image_base64 }}" class="profile-img" alt="Profile Picture">
     {% else %}
-    <img src="https://via.placeholder.com/100" class="profile-img" alt="Default Profile">
+        <img src="https://via.placeholder.com/100" class="profile-img" alt="Default Profile">
     {% endif %}
 
     <hr>

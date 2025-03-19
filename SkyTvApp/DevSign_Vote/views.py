@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate  
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserRegisterForm, ProfileUpdateForm
+import base64
+from django.core.files.base import ContentFile
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 
@@ -116,3 +118,17 @@ def user_logout(request):
     logout(request)
     messages.success(request, "You have been logged out.")
     return redirect("home")
+
+@login_required
+def profile(request):
+    user = request.user
+    profile_image_base64 = None
+
+    if user.profile_image:  
+        try:
+            image_bytes = user.profile_image.read()  
+            profile_image_base64 = base64.b64encode(image_bytes).decode("utf-8")  
+        except Exception as e:
+            print(f"Error encoding image: {e}") 
+
+    return render(request, "DevSign_Vote/profile.html", {"user": user, "profile_image_base64": profile_image_base64})

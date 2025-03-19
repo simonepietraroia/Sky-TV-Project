@@ -26,12 +26,12 @@
                                 <img src="https://via.placeholder.com/40" class="navbar-profile-img" alt="Default Profile">
                             {% endif %}
                         </a>
-                        <div class="profile-dropdown" id="profileDropdown">
+                        
                             <p><strong>{{ user.username }}</strong></p>
                             <p>{{ user.first_name }} {{ user.last_name }}</p>
                             <a href="{% url 'profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
                             <a href="{% url 'logout' %}" class="btn btn-danger btn-sm mt-2">Logout</a>
-                        </div>
+                        
                     </div>
                 {% else %}
                     <div class="d-flex">
