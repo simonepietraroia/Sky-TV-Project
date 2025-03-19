@@ -6,8 +6,9 @@
     <h2>Welcome, {{ user.username }}!</h2>
 
     {% if user.profile_image %}
-        <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
-            class="rounded-circle profile-img" alt="Profile Image">
+    <img src="{{ user.profile_image.url }}" class="profile-img" alt="Profile Picture">
+    {% else %}
+    <img src="https://via.placeholder.com/100" class="profile-img" alt="Default Profile">
     {% endif %}
 
     <hr>

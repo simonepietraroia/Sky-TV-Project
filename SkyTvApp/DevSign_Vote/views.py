@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import ProfileUpdateForm
-from .forms import UserRegisterForm
+from django.contrib.auth import login, logout, authenticate  
 from django.contrib.auth.forms import AuthenticationForm
+from .forms import UserRegisterForm, ProfileUpdateForm
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 
@@ -82,12 +82,15 @@ def signup(request):
     if request.method == "POST":
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
+            user = form.save()  
+            login(request, user) 
             messages.success(request, "Account created successfully!")
-            return redirect("home")
+            return redirect("home")  
+        else:
+            messages.error(request, "There was an error with your signup form.")
     else:
         form = UserRegisterForm()
+
     return render(request, "DevSign_Vote/signup.html", {"form": form})
 
 def user_login(request):

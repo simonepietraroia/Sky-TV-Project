@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-13t$x*^x6rpuql+jloh116s&0ef*9t^!%j!3^w*auq7z%7%ua7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['8000-simonepietr-skytvprojec-cjy49mk1fob.ws-eu118.gitpod.io', '8000-simonepietr-skytvprojec-gnwn75v0kzv.ws-eu118.gitpod.io']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -130,5 +130,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'DevSign_Vote.User'
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://8000-simonepietr-skytvprojec-79bwmpe20rm.ws-eu118.gitpod.io"
+    "https://8000-simonepietr-skytvprojec-cjy49mk1fob.ws-eu118.gitpod.io"
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+
