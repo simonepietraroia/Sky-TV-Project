@@ -133,6 +133,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://8000-simonepietr-skytvprojec-qkluzy3c9i4.ws-eu118.gitpod.io'
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

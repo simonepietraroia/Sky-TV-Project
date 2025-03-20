@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate  
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm, ProfileUpdateForm
+from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm
 import base64
 from django.core.files.base import ContentFile
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
@@ -99,21 +99,22 @@ def signup(request):
 
 def user_login(request):
     if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
+        form = EmailAuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get("username")
+            email = form.cleaned_data.get("username") 
             password = form.cleaned_data.get("password")
-            user = authenticate(username=username, password=password)
+            user = authenticate(email=email, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f"Welcome, {username}!")
+                messages.success(request, "Welcome back!")
                 return redirect("home")
             else:
-                messages.error(request, "Invalid username or password.")
+                messages.error(request, "Invalid email or password.")
         else:
             messages.error(request, "Invalid credentials.")
     else:
-        form = AuthenticationForm()
+        form = EmailAuthenticationForm()
+
     return render(request, "DevSign_Vote/login.html", {"form": form})
 
 def user_logout(request):
