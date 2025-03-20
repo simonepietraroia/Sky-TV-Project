@@ -24,3 +24,12 @@ document.addEventListener("DOMContentLoaded", function () {
         profileDropdown.classList.remove("show");
     });
 });
+
+
+document.addEventListener("DOMContentLoaded", function() {
+    let clearCheckbox = document.querySelector('.clearable-file-input');
+    if (clearCheckbox) {
+        clearCheckbox.style.display = "none";
+    }
+});
+

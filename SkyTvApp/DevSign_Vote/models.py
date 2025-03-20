@@ -43,7 +43,7 @@ class User(AbstractUser):
         return self.role == "team_leader"
 
     def __str__(self):
-        return self.username
+        return f"{self.first_name} {self.last_name}" if self.first_name else self.email
 
 class Department(models.Model):
     DepartmentID = models.AutoField(primary_key=True)

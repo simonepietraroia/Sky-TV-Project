@@ -6,7 +6,7 @@ class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email', 'profile_image']
-    
+
 class UserRegisterForm(UserCreationForm):
 
     role = forms.ChoiceField(choices=User.ROLE_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
