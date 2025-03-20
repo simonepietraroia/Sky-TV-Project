@@ -23,15 +23,15 @@
                                 <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
                                      class="navbar-profile-img" alt="Profile Image">
                             {% else %}
-                                <img src="https://via.placeholder.com/40" class="navbar-profile-img" alt="Default Profile">
+                                <span class="navbar-text">{{ user.first_name }} {{ user.last_name }}</span>
                             {% endif %}
                         </a>
                         
-                            <p><strong>{{ user.username }}</strong></p>
+                    
+                            <p><strong>{{ user.role }}</strong></p>
                             <p>{{ user.first_name }} {{ user.last_name }}</p>
                             <a href="{% url 'profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
                             <a href="{% url 'logout' %}" class="btn btn-danger btn-sm mt-2">Logout</a>
-                        
                     </div>
                 {% else %}
                     <div class="d-flex">
