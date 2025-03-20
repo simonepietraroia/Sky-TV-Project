@@ -84,7 +84,9 @@ def signup(request):
     if request.method == "POST":
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()  
+            user = form.save()
+            user.role = form.cleaned_data["role"]  
+            user.save()
             login(request, user) 
             messages.success(request, "Account created successfully!")
             return redirect("home")  
