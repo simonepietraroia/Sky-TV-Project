@@ -1,6 +1,6 @@
 {% extends 'DevSign_Vote/base.html' %}
-
 {% block content %}
+
 <h1>Welcome, {{ user.get_full_name }}</h1>
 <p>Your role: <strong>{{ user.role }}</strong></p>
 
@@ -13,3 +13,116 @@
         <button type="submit">Create Voting Session</button>
     </form>
 
+    <h3>Your Team's Voting Sessions</h3>
+    <select id="team-session-dropdown" onchange="filterSessions()">
+        <option value="all">All Sessions</option>
+        {% for session in team_sessions %}
+            <option value="{{ session.id }}">{{ session.title }}</option>
+        {% endfor %}
+    </select>
+
+    <ul id="team-sessions-list">
+        {% for session in team_sessions %}
+            <li data-session-id="{{ session.id }}">{{ session.title }} - {{ session.created_at }}</li>
+        {% empty %}
+            <li>No previous sessions.</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<!-- Department Leader & Senior Engineer Section -->
+{% if user.role == "department_leader" or user.role == "senior_engineer" %}
+    <h2>Department Summary</h2>
+
+    <select id="team-dropdown" onchange="filterTeams()">
+        <option value="all">All Teams</option>
+        {% for team in department_summary %}
+            <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
+        {% endfor %}
+    </select>
+
+    <ul id="department-summary-list">
+        {% for team in department_summary %}
+            <li data-team="{{ team.TeamID.TeamName }}">
+                Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
+            </li>
+        {% empty %}
+            <li>No data available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Department Trends</h2>
+    <canvas id="trendsChart"></canvas>
+{% endif %}
+
+<!-- Senior Engineer Section -->
+{% if user.role == "senior_engineer" %}
+    <h2>Company-Wide Summary</h2>
+
+    <select id="department-dropdown" onchange="filterDepartments()">
+        <option value="all">All Departments</option>
+        {% for dept in company_summary %}
+            <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">{{ dept.TeamID.DepartmentID.DepartmentName }}</option>
+        {% endfor %}
+    </select>
+
+    <ul id="company-summary-list">
+        {% for dept in company_summary %}
+            <li data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
+                Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
+                Team: {{ dept.TeamID.TeamName }},
+                Total Votes: {{ dept.TotalVotes }}
+            </li>
+        {% empty %}
+            <li>No data available.</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function filterSessions() {
+        var selectedSession = document.getElementById("team-session-dropdown").value;
+        var sessions = document.querySelectorAll("#team-sessions-list li");
+        sessions.forEach(session => {
+            session.style.display = (selectedSession === "all" || session.dataset.sessionId === selectedSession) ? "block" : "none";
+        });
+    }
+
+    function filterTeams() {
+        var selectedTeam = document.getElementById("team-dropdown").value;
+        var teams = document.querySelectorAll("#department-summary-list li");
+        teams.forEach(team => {
+            team.style.display = (selectedTeam === "all" || team.dataset.team === selectedTeam) ? "block" : "none";
+        });
+    }
+
+    function filterDepartments() {
+        var selectedDepartment = document.getElementById("department-dropdown").value;
+        var departments = document.querySelectorAll("#company-summary-list li");
+        departments.forEach(department => {
+            department.style.display = (selectedDepartment === "all" || department.dataset.department === selectedDepartment) ? "block" : "none";
+        });
+    }
+
+    // Convert Django context variables safely into JavaScript
+    var departmentDates = JSON.parse('{{ department_trends.dates|safe }}');
+    var departmentVotes = JSON.parse('{{ department_trends.votes|safe }}');
+
+    var ctx = document.getElementById('trendsChart').getContext('2d');
+    var trendsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: departmentDates,
+            datasets: [{
+                label: 'Vote Trends',
+                data: departmentVotes,
+                borderColor: 'blue',
+                fill: false
+            }]
+        },
+        options: { responsive: true }
+    });
+</script>
+
+{% endblock %}
