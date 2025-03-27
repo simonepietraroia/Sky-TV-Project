@@ -1,6 +1,7 @@
 {% extends 'DevSign_Vote/base.html' %}
-{% block content %}
+{% block title %}Portal - DevSign_Vote{% endblock %}
 
+{% block content %}
 <h1>Welcome, {{ user.get_full_name }}</h1>
 <p>Your role: <strong>{{ user.role }}</strong></p>
 
@@ -14,69 +15,72 @@
     </form>
 
     <h3>Your Team's Voting Sessions</h3>
-    <select id="team-session-dropdown" onchange="filterSessions()">
+    <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
         <option value="all">All Sessions</option>
         {% for session in team_sessions %}
             <option value="{{ session.id }}">{{ session.title }}</option>
         {% endfor %}
     </select>
 
-    <ul id="team-sessions-list">
+    <ul id="team-sessions-list" class="list-group mt-3">
         {% for session in team_sessions %}
-            <li data-session-id="{{ session.id }}">{{ session.title }} - {{ session.created_at }}</li>
+            <li class="list-group-item" data-session-id="{{ session.id }}">{{ session.title }} - {{ session.created_at }}</li>
         {% empty %}
-            <li>No previous sessions.</li>
+            <li class="list-group-item">No previous sessions.</li>
         {% endfor %}
     </ul>
 {% endif %}
 
-<!-- Department Leader & Senior Engineer Section -->
+<!-- Department Leader Section -->
 {% if user.role == "department_leader" or user.role == "senior_engineer" %}
     <h2>Department Summary</h2>
 
-    <select id="team-dropdown" onchange="filterTeams()">
+    <select id="team-dropdown" class="form-select" onchange="filterTeams()">
         <option value="all">All Teams</option>
         {% for team in department_summary %}
             <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
         {% endfor %}
     </select>
 
-    <ul id="department-summary-list">
+    <ul id="department-summary-list" class="list-group mt-3">
         {% for team in department_summary %}
-            <li data-team="{{ team.TeamID.TeamName }}">
+            <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
                 Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
             </li>
         {% empty %}
-            <li>No data available.</li>
+            <li class="list-group-item">No data available.</li>
         {% endfor %}
     </ul>
 
-    <h2>Department Trends</h2>
-    <canvas id="trendsChart"></canvas>
+    <h2>Department Vote Distribution</h2>
+    <canvas id="departmentPieChart"></canvas>
 {% endif %}
 
 <!-- Senior Engineer Section -->
 {% if user.role == "senior_engineer" %}
     <h2>Company-Wide Summary</h2>
 
-    <select id="department-dropdown" onchange="filterDepartments()">
+    <select id="department-dropdown" class="form-select" onchange="filterDepartments()">
         <option value="all">All Departments</option>
         {% for dept in company_summary %}
             <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">{{ dept.TeamID.DepartmentID.DepartmentName }}</option>
         {% endfor %}
     </select>
 
-    <ul id="company-summary-list">
+    <ul id="company-summary-list" class="list-group mt-3">
         {% for dept in company_summary %}
-            <li data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
+            <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
                 Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
                 Team: {{ dept.TeamID.TeamName }},
                 Total Votes: {{ dept.TotalVotes }}
             </li>
         {% empty %}
-            <li>No data available.</li>
+            <li class="list-group-item">No data available.</li>
         {% endfor %}
     </ul>
+
+    <h2>Company-Wide Vote Distribution</h2>
+    <canvas id="companyPieChart"></canvas>
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -106,22 +110,48 @@
     }
 
     // Convert Django context variables safely into JavaScript
-    var departmentDates = JSON.parse('{{ department_trends.dates|safe }}');
+    var departmentNames = JSON.parse('{{ department_trends.names|safe }}');
     var departmentVotes = JSON.parse('{{ department_trends.votes|safe }}');
 
-    var ctx = document.getElementById('trendsChart').getContext('2d');
-    var trendsChart = new Chart(ctx, {
-        type: 'line',
+    var companyNames = JSON.parse('{{ company_trends.names|safe }}');
+    var companyVotes = JSON.parse('{{ company_trends.votes|safe }}');
+
+    // Department Pie Chart
+    var ctxDept = document.getElementById('departmentPieChart').getContext('2d');
+    var departmentPieChart = new Chart(ctxDept, {
+        type: 'pie',
         data: {
-            labels: departmentDates,
+            labels: departmentNames,
             datasets: [{
-                label: 'Vote Trends',
                 data: departmentVotes,
-                borderColor: 'blue',
-                fill: false
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' }
+            }
+        }
+    });
+
+    // Company-Wide Pie Chart
+    var ctxCompany = document.getElementById('companyPieChart').getContext('2d');
+    var companyPieChart = new Chart(ctxCompany, {
+        type: 'pie',
+        data: {
+            labels: companyNames,
+            datasets: [{
+                data: companyVotes,
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' }
+            }
+        }
     });
 </script>
 
