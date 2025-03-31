@@ -1,19 +1,117 @@
 {% extends "DevSign_Vote/base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>Login</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" name="username" class="form-control" required>
+<style>
+    .wrapper {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    .content {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(to right, #0072C6, #3A86FF);
+        font-family: Arial, sans-serif;
+    }
+    .login-container {
+        display: flex;
+        width: 900px;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .left-section {
+        background: #0072C6;
+        color: white;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 40px;
+    }
+    .left-section img {
+        max-width: 100px;
+        margin-bottom: 20px;
+    }
+    .right-section {
+        flex: 1;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .form-group label {
+        font-weight: bold;
+    }
+    .login-btn {
+        width: 100%;
+        padding: 10px;
+        background: linear-gradient(to right, #0072C6, #3A86FF);
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s ease-in-out;
+    }
+    .login-btn:hover {
+        background: linear-gradient(to right, #005A9C, #2A6AD0);
+    }
+    @media (max-width: 768px) {
+        .login-container {
+            flex-direction: column;
+            width: 90%;
+        }
+        .left-section {
+            padding: 20px;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="wrapper">
+    <div class="content">
+        <div class="login-container">
+            <div class="left-section">
+                <img src="/static/sky_logo.png" alt="SKY Logo">
+                <h2>Welcome</h2>
+                <p>Login to access your account</p>
+            </div>
+            <div class="right-section">
+                <h2>Welcome to SKY</h2>
+                <p>Don't have an account? Sign up now!</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" name="username" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox" name="remember_me"> Remember me
+                        <a href="#" style="float: right; text-decoration: none;">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="login-btn">Login</button>
+                </form>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" name="password" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Login</button>
-    </form>
+    </div>
 </div>
+
 {% endblock %}
