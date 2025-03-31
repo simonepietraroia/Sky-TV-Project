@@ -6,6 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm
 import base64
 from django.core.files.base import ContentFile
+from django.views.decorators.csrf import csrf_exempt
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 
@@ -79,7 +80,7 @@ def create_voting_session(request):
         return redirect('portal')
 
     return redirect('portal')
-
+@csrf_exempt
 def signup(request):
     if request.method == "POST":
         form = UserRegisterForm(request.POST)
@@ -93,6 +94,7 @@ def signup(request):
 
     return render(request, "DevSign_Vote/signup.html", {"form": form})
 
+@csrf_exempt
 def user_login(request):
     if request.method == "POST":
         form = EmailAuthenticationForm(request, data=request.POST)
