@@ -2,85 +2,123 @@
 {% block title %}Portal - DevSign_Vote{% endblock %}
 
 {% block content %}
+<style>
+    body {
+      background: #f0f5ff;
+      font-family: 'Segoe UI', sans-serif;
+      color: #222;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .site-header {
+      background: linear-gradient(90deg, #6a11cb, #2575fc);
+      color: white;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 24px;
+    }
+    .role-section {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      color: #222;
+    }
+    .chart-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+</style>
+
 <h1>Welcome, {{ user.get_full_name }}</h1>
 <p>Your role: <strong>{{ user.role }}</strong></p>
 
 <!-- Team Leader Section -->
 {% if user.role == "team_leader" %}
-    <h2>Manage Your Team's Voting Sessions</h2>
-    <form action="{% url 'create_voting_session' %}" method="post">
-        {% csrf_token %}
-        <input type="text" name="title" placeholder="Session Title" required>
-        <button type="submit">Create Voting Session</button>
-    </form>
+    <div class="role-section">
+        <h2>Manage Your Team's Voting Sessions</h2>
+        <form action="{% url 'create_voting_session' %}" method="post">
+            {% csrf_token %}
+            <input type="text" name="title" placeholder="Session Title" required>
+            <button type="submit">Create Voting Session</button>
+        </form>
 
-    <h3>Your Team's Voting Sessions</h3>
-    <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
-        <option value="all">All Sessions</option>
-        {% for session in team_sessions %}
-            <option value="{{ session.id }}">{{ session.title }}</option>
-        {% endfor %}
-    </select>
+        <h3>Your Team's Voting Sessions</h3>
+        <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
+            <option value="all">All Sessions</option>
+            {% for session in team_sessions %}
+                <option value="{{ session.id }}">{{ session.title }}</option>
+            {% endfor %}
+        </select>
 
-    <ul id="team-sessions-list" class="list-group mt-3">
-        {% for session in team_sessions %}
-            <li class="list-group-item" data-session-id="{{ session.id }}">{{ session.title }} - {{ session.created_at }}</li>
-        {% empty %}
-            <li class="list-group-item">No previous sessions.</li>
-        {% endfor %}
-    </ul>
+        <ul id="team-sessions-list" class="list-group mt-3">
+            {% for session in team_sessions %}
+                <li class="list-group-item" data-session-id="{{ session.id }}">{{ session.title }} - {{ session.created_at }}</li>
+            {% empty %}
+                <li class="list-group-item">No previous sessions.</li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endif %}
 
 <!-- Department Leader Section -->
 {% if user.role == "department_leader" or user.role == "senior_engineer" %}
-    <h2>Department Summary</h2>
+    <div class="role-section">
+        <h2>Department Summary</h2>
+        <select id="team-dropdown" class="form-select" onchange="filterTeams()">
+            <option value="all">All Teams</option>
+            {% for team in department_summary %}
+                <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
+            {% endfor %}
+        </select>
 
-    <select id="team-dropdown" class="form-select" onchange="filterTeams()">
-        <option value="all">All Teams</option>
-        {% for team in department_summary %}
-            <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
-        {% endfor %}
-    </select>
+        <ul id="department-summary-list" class="list-group mt-3">
+            {% for team in department_summary %}
+                <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
+                    Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
+                </li>
+            {% empty %}
+                <li class="list-group-item">No data available.</li>
+            {% endfor %}
+        </ul>
 
-    <ul id="department-summary-list" class="list-group mt-3">
-        {% for team in department_summary %}
-            <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
-                Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
-            </li>
-        {% empty %}
-            <li class="list-group-item">No data available.</li>
-        {% endfor %}
-    </ul>
-
-    <h2>Department Vote Distribution</h2>
-    <canvas id="departmentPieChart"></canvas>
+        <h2>Department Vote Distribution</h2>
+        <canvas id="departmentPieChart"></canvas>
+    </div>
 {% endif %}
 
 <!-- Senior Engineer Section -->
 {% if user.role == "senior_engineer" %}
-    <h2>Company-Wide Summary</h2>
+    <div class="role-section">
+        <h2>Company-Wide Summary</h2>
+        <select id="department-dropdown" class="form-select" onchange="filterDepartments()">
+            <option value="all">All Departments</option>
+            {% for dept in company_summary %}
+                <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">{{ dept.TeamID.DepartmentID.DepartmentName }}</option>
+            {% endfor %}
+        </select>
 
-    <select id="department-dropdown" class="form-select" onchange="filterDepartments()">
-        <option value="all">All Departments</option>
-        {% for dept in company_summary %}
-            <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">{{ dept.TeamID.DepartmentID.DepartmentName }}</option>
-        {% endfor %}
-    </select>
+        <ul id="company-summary-list" class="list-group mt-3">
+            {% for dept in company_summary %}
+                <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
+                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
+                    Team: {{ dept.TeamID.TeamName }},
+                    Total Votes: {{ dept.TotalVotes }}
+                </li>
+            {% empty %}
+                <li class="list-group-item">No data available.</li>
+            {% endfor %}
+        </ul>
 
-    <ul id="company-summary-list" class="list-group mt-3">
-        {% for dept in company_summary %}
-            <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
-                Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
-                Team: {{ dept.TeamID.TeamName }},
-                Total Votes: {{ dept.TotalVotes }}
-            </li>
-        {% empty %}
-            <li class="list-group-item">No data available.</li>
-        {% endfor %}
-    </ul>
-
-    <h2>Company-Wide Vote Distribution</h2>
-    <canvas id="companyPieChart"></canvas>
+        <h2>Company-Wide Vote Distribution</h2>
+        <canvas id="companyPieChart"></canvas>
+    </div>
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -108,51 +146,6 @@
             department.style.display = (selectedDepartment === "all" || department.dataset.department === selectedDepartment) ? "block" : "none";
         });
     }
-
-    // Convert Django context variables safely into JavaScript
-    var departmentNames = JSON.parse('{{ department_trends.names|safe }}');
-    var departmentVotes = JSON.parse('{{ department_trends.votes|safe }}');
-
-    var companyNames = JSON.parse('{{ company_trends.names|safe }}');
-    var companyVotes = JSON.parse('{{ company_trends.votes|safe }}');
-
-    // Department Pie Chart
-    var ctxDept = document.getElementById('departmentPieChart').getContext('2d');
-    var departmentPieChart = new Chart(ctxDept, {
-        type: 'pie',
-        data: {
-            labels: departmentNames,
-            datasets: [{
-                data: departmentVotes,
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'top' }
-            }
-        }
-    });
-
-    // Company-Wide Pie Chart
-    var ctxCompany = document.getElementById('companyPieChart').getContext('2d');
-    var companyPieChart = new Chart(ctxCompany, {
-        type: 'pie',
-        data: {
-            labels: companyNames,
-            datasets: [{
-                data: companyVotes,
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'top' }
-            }
-        }
-    });
 </script>
 
 {% endblock %}

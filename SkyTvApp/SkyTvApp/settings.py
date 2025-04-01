@@ -130,7 +130,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'DevSign_Vote.User'
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://example1.com'
+    'https://8000-simonepietr-skytvprojec-no1p0aghdze.ws-eu118.gitpod.io'
 ]
 
 AUTHENTICATION_BACKENDS = [
