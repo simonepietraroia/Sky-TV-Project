@@ -7,6 +7,8 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
+from .models import VotingSession, TeamSummary, DepartmentSummary
+
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 
@@ -133,3 +135,18 @@ def profile(request):
             print(f"Error encoding image: {e}") 
 
     return render(request, "DevSign_Vote/profile.html", {"user": user, "profile_image_base64": profile_image_base64})
+
+
+def dashboard_view(request):
+    user = request.user
+    team_sessions = VotingSession.objects.filter(team_leader=user)
+    department_summary = TeamSummary.objects.filter(department_leader=user)
+    company_summary = DepartmentSummary.objects.all()
+
+    context = {
+        'user': user,
+        'team_sessions': team_sessions,
+        'department_summary': department_summary,
+        'company_summary': company_summary,
+    }
+    return render(request, 'DevSign_Vote/dashboard.html', context)
