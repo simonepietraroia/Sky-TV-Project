@@ -7,8 +7,7 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import VotingSession, TeamSummary, DepartmentSummary
-
+# from .models import VotingSession, TeamSummary, DepartmentSummary
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 
