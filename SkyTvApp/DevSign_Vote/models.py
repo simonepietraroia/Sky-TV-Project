@@ -35,6 +35,7 @@ class User(AbstractUser):
     
     groups = models.ManyToManyField(Group, related_name="custom_user_groups", blank=True)
     user_permissions = models.ManyToManyField(Permission, related_name="custom_user_permissions", blank=True)
+    TeamID = models.ForeignKey("DevSign_Vote.Team", null=True, blank=True, on_delete=models.SET_NULL)
 
     USERNAME_FIELD = "email" 
     REQUIRED_FIELDS = []
@@ -56,12 +57,12 @@ class Department(models.Model):
 
 class Team(models.Model):
     TeamID = models.AutoField(primary_key=True)
-    TeamName = models.CharField(max_length=255)
+    Name = models.CharField(max_length=255)
     DepartmentID = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="teams")
     DateCreated = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.TeamName
+        return self.Name
 
 class Session(models.Model):
     SessionID = models.AutoField(primary_key=True)

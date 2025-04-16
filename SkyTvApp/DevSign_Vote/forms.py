@@ -1,11 +1,19 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import User, Session, HealthCard, Vote
+from django.forms import Select
 
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'profile_image']
+        fields = ['first_name', 'last_name', 'profile_image', 'TeamID']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.get('instance')  # the current user
+        super().__init__(*args, **kwargs)
+
+        if user and user.role != 'team_leader':
+            self.fields['TeamID'].disabled = True
 
 class UserRegisterForm(UserCreationForm):
 

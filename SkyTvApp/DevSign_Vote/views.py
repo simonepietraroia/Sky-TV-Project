@@ -10,6 +10,9 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Session, HealthCard, Vote
 from .forms import VoteForm
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.contrib import messages
+from django.http import HttpResponse, HttpResponseBadRequest
 # from .models import VotingSession, TeamSummary, DepartmentSummary
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
@@ -17,34 +20,28 @@ from django.utils import timezone
 def homepage(request):
     return render(request, 'DevSign_Vote/home.html')
 
-def user_login(request):
-    if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('home') 
-        else:
-            messages.error(request, "Invalid username or password")
-    return render(request, 'DevSign_Vote/login.html')
-
 @login_required
 def profile(request):
     return render(request, "DevSign_Vote/profile.html")
 
+@csrf_exempt
 @login_required
 def edit_profile(request):
-    if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
+    user = request.user
+
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+
+        if user.role != 'team_leader' and 'TeamID' in form.changed_data:
+            return HttpResponseForbidden("Only team leaders can change their team.")
+
         if form.is_valid():
             form.save()
-            messages.success(request, "Your profile has been updated!")
-            return redirect("profile")
+            return redirect('profile')  # or wherever you redirect after saving
     else:
-        form = ProfileUpdateForm(instance=request.user)
+        form = ProfileUpdateForm(instance=user)
 
-    return render(request, "DevSign_Vote/edit_profile.html", {"form": form})
+    return render(request, 'DevSign_Vote/edit_profile.html', {'form': form})
 
 
 @login_required
@@ -66,41 +63,52 @@ def portal_view(request):
 
     return render(request, 'DevSign_Vote/portal.html', context)
 
-
+@csrf_exempt
 @login_required
 def create_voting_session(request):
-    if request.user.role != "team_leader":
-        messages.error(request, "You do not have permission to create a session.")
-        return redirect("portal")
-
-    if request.method == "POST":
+    if request.method == 'POST':
         form = VotingSessionForm(request.POST)
         if form.is_valid():
-            session = Session.objects.create(
+            # Check if the user is assigned to a team
+            if not request.user.TeamID:
+                return HttpResponseBadRequest("You must be assigned to a team to create a voting session.")
+
+            session = form.save(commit=False)
+            session.TeamID = request.user.TeamID  # ✅ safe now
+            session.UserID = request.user
+            session.CreatedBy = request.user  # corrected field name if needed
+
+            # Optional: clean field names if not handled in form
+            session.Name = request.POST.get('session_name')
+            session.StartTime = parse_datetime(request.POST.get('start_time'))
+            session.EndTime = parse_datetime(request.POST.get('end_time'))
+            session.Status = 'Pending'  # or any default status you use
+            session.save()
+            form.save_m2m()
+
+            # Retrieve and validate the HealthCard
+            card_id = request.POST.get('health_cards')
+            try:
+                health_card = HealthCard.objects.get(CardID=card_id)
+            except HealthCard.DoesNotExist:
+                return HttpResponseBadRequest("Invalid health card ID.")
+
+            # ✅ Now safely create the vote
+            Vote.objects.create(
+                SessionID=session,
                 UserID=request.user,
-                Status="Open",
-                CreatedBy=request.user,
-                StartTime=form.cleaned_data['start_time'],
-                EndTime=form.cleaned_data['end_time'],
+                TeamID=request.user.TeamID,
+                CardID=health_card,
+                VoteValue=0,
+                Progress='Not Started',
+                Comment=''
             )
 
-            health_cards = form.cleaned_data['health_cards']
-            for card in health_cards:
-                Vote.objects.create(
-                    TeamID=request.user.TeamID,
-                    UserID=request.user, 
-                    CardID=card,
-                    SessionID=session,
-                    VoteValue=0,
-                    Progress="not_started"
-                )
-
-            messages.success(request, f"Voting session '{form.cleaned_data['session_name']}' created and initialized.")
-            return redirect("portal")
+            return HttpResponse("Voting session created successfully.", status=201)
     else:
         form = VotingSessionForm()
 
-    return render(request, "DevSign_Vote/create_session.html", {"form": form})
+    return render(request, 'DevSign_Vote/create_session.html', {'form': form})
 
 @csrf_exempt
 def signup(request):
@@ -171,6 +179,7 @@ def dashboard_view(request):
     }
     return render(request, 'DevSign_Vote/dashboard.html', context)
 
+@csrf_exempt
 @login_required
 def vote_on_session(request, session_id):
     session = Session.objects.get(pk=session_id)
