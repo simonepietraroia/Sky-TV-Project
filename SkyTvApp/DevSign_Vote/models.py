@@ -36,6 +36,7 @@ class User(AbstractUser):
     groups = models.ManyToManyField(Group, related_name="custom_user_groups", blank=True)
     user_permissions = models.ManyToManyField(Permission, related_name="custom_user_permissions", blank=True)
     TeamID = models.ForeignKey("DevSign_Vote.Team", null=True, blank=True, on_delete=models.SET_NULL)
+    DepartmentID = models.ForeignKey('DevSign_Vote.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name="users")
 
     USERNAME_FIELD = "email" 
     REQUIRED_FIELDS = []

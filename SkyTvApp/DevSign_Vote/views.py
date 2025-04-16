@@ -7,8 +7,8 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm,
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Session, HealthCard, Vote
-from .forms import VoteForm
+from .models import Session, HealthCard, Vote, Department, Team
+from .forms import VoteForm, ProfileUpdateForm
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.contrib import messages
@@ -28,20 +28,22 @@ def profile(request):
 @login_required
 def edit_profile(request):
     user = request.user
-
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
-
-        if user.role != 'team_leader' and 'TeamID' in form.changed_data:
-            return HttpResponseForbidden("Only team leaders can change their team.")
-
         if form.is_valid():
             form.save()
-            return redirect('profile')  # or wherever you redirect after saving
+            return redirect('profile')
     else:
         form = ProfileUpdateForm(instance=user)
 
-    return render(request, 'DevSign_Vote/edit_profile.html', {'form': form})
+    departments = Department.objects.all()
+    teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID) if user.TeamID else Team.objects.none()
+
+    return render(request, 'DevSign_Vote/edit_profile.html', {
+        'form': form,
+        'departments': departments,
+        'teams': teams,
+    })
 
 
 @login_required
