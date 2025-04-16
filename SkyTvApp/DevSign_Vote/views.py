@@ -7,7 +7,9 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm,
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Session, HealthCard
+from .models import Session, HealthCard, Vote
+from .forms import VoteForm
+from django.utils import timezone
 # from .models import VotingSession, TeamSummary, DepartmentSummary
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
@@ -168,3 +170,37 @@ def dashboard_view(request):
         'company_summary': company_summary,
     }
     return render(request, 'DevSign_Vote/dashboard.html', context)
+
+@login_required
+def vote_on_session(request, session_id):
+    session = Session.objects.get(pk=session_id)
+
+    if session.Status == "Closed" or session.EndTime < timezone.now():
+        messages.error(request, "This session is closed.")
+        return redirect("portal")
+
+    health_cards = HealthCard.objects.all()
+
+    if request.method == "POST":
+        for card in health_cards:
+            vote_value = request.POST.get(f"vote_{card.CardID}")
+            progress = request.POST.get(f"trend_{card.CardID}")
+            comment = request.POST.get(f"comment_{card.CardID}")
+
+            if vote_value and progress:
+                Vote.objects.create(
+                    TeamID=request.user.TeamID,
+                    UserID=request.user,
+                    CardID=card,
+                    SessionID=session,
+                    VoteValue=vote_value,
+                    Progress=progress,
+                    Comment=comment
+                )
+        messages.success(request, "Your votes have been submitted.")
+        return redirect("portal")
+
+    return render(request, "DevSign_Vote/vote_session.html", {
+        "session": session,
+        "cards": health_cards
+    })

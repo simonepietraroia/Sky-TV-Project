@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import User, Session, HealthCard
+from .models import User, Session, HealthCard, Vote
 
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
@@ -40,3 +40,19 @@ class VotingSessionForm(forms.ModelForm):
     class Meta:
         model = Session
         fields = ['start_time', 'end_time']
+
+class VoteForm(forms.ModelForm):
+    VOTE_CHOICES = [
+        (1, '🔴 Red'), (2, '🟡 Yellow'), (3, '🟢 Green')
+    ]
+    TREND_CHOICES = [
+        ('up', '⬆️ Trending Up'), ('down', '⬇️ Trending Down')
+    ]
+
+    VoteValue = forms.ChoiceField(choices=VOTE_CHOICES, widget=forms.RadioSelect)
+    Progress = forms.ChoiceField(choices=TREND_CHOICES, widget=forms.RadioSelect)
+    Comment = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), required=False)
+
+    class Meta:
+        model = Vote
+        fields = ['VoteValue', 'Progress', 'Comment']

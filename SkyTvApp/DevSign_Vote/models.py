@@ -84,6 +84,7 @@ class Vote(models.Model):
     VoteValue = models.IntegerField()
     Progress = models.CharField(max_length=50)
     TimeStamp = models.DateTimeField(auto_now_add=True)
+    Comment = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Vote {self.VoteID} - {self.VoteValue}"

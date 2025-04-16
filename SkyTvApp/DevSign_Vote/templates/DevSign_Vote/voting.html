@@ -1,0 +1,32 @@
+{% block content %}
+<div class="container">
+    <h2>Vote for Session: {{ session }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% for card in cards %}
+            <div class="card my-3 p-3">
+                <h5>{{ card.Description }}</h5>
+
+                <div class="mb-2">
+                    <label class="form-label">Vote</label><br>
+                    <label><input type="radio" name="vote_{{ card.CardID }}" value="1"> 🔴 Red</label>&nbsp;
+                    <label><input type="radio" name="vote_{{ card.CardID }}" value="2"> 🟡 Yellow</label>&nbsp;
+                    <label><input type="radio" name="vote_{{ card.CardID }}" value="3"> 🟢 Green</label>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Trend</label><br>
+                    <label><input type="radio" name="trend_{{ card.CardID }}" value="up"> ⬆️ Up</label>&nbsp;
+                    <label><input type="radio" name="trend_{{ card.CardID }}" value="down"> ⬇️ Down</label>
+                </div>
+
+                <div>
+                    <label class="form-label">Comment</label>
+                    <textarea name="comment_{{ card.CardID }}" rows="2" class="form-control" placeholder="Your thoughts..."></textarea>
+                </div>
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Submit Votes</button>
+    </form>
+</div>
+{% endblock %}
