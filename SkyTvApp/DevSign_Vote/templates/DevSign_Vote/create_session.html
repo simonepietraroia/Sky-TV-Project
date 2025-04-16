@@ -3,11 +3,48 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Create Voting Session</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Create Session</button>
-    </form>
+    <div class="card shadow-lg rounded-4 p-4">
+        <div class="card-body">
+            <h2 class="card-title mb-4 text-primary">Create a Voting Session</h2>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="id_session_name" class="form-label">Session Name</label>
+                        {{ form.session_name }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="id_start_time" class="form-label">Start Time</label>
+                        {{ form.start_time }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="id_end_time" class="form-label">End Time</label>
+                        {{ form.end_time }}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Select Health Cards</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for checkbox in form.health_cards %}
+                                <div class="form-check card p-3" style="min-width: 220px;">
+                                    <label class="form-check-label">
+                                        {{ checkbox.tag }} {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary btn-lg px-4">Create Session</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

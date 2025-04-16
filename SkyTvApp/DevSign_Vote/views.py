@@ -69,19 +69,32 @@ def portal_view(request):
 def create_voting_session(request):
     if request.user.role != "team_leader":
         messages.error(request, "You do not have permission to create a session.")
-        return redirect('portal')
+        return redirect("portal")
 
     if request.method == "POST":
         form = VotingSessionForm(request.POST)
         if form.is_valid():
-            session = form.save(commit=False)
-            session.UserID = request.user
-            session.CreatedBy = request.user
-            session.Status = "Open"
-            session.save()
-            form.cleaned_data['health_cards'].update(SessionID=session)  # Optional, if you want a reverse relationship
-            messages.success(request, "Session created successfully!")
-            return redirect('portal')
+            session = Session.objects.create(
+                UserID=request.user,
+                Status="Open",
+                CreatedBy=request.user,
+                StartTime=form.cleaned_data['start_time'],
+                EndTime=form.cleaned_data['end_time'],
+            )
+
+            health_cards = form.cleaned_data['health_cards']
+            for card in health_cards:
+                Vote.objects.create(
+                    TeamID=request.user.TeamID,
+                    UserID=request.user, 
+                    CardID=card,
+                    SessionID=session,
+                    VoteValue=0,
+                    Progress="not_started"
+                )
+
+            messages.success(request, f"Voting session '{form.cleaned_data['session_name']}' created and initialized.")
+            return redirect("portal")
     else:
         form = VotingSessionForm()
 

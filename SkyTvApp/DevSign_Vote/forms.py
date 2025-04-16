@@ -20,9 +20,17 @@ class EmailAuthenticationForm(AuthenticationForm):
     username = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
 
 class VotingSessionForm(forms.ModelForm):
-    session_name = forms.CharField(label="Session Name", max_length=255)
-    start_time = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
-    end_time = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
+    session_name = forms.CharField(
+        label="Session Name",
+        max_length=255,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    start_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'})
+    )
+    end_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'})
+    )
     health_cards = forms.ModelMultipleChoiceField(
         queryset=HealthCard.objects.all(),
         widget=forms.CheckboxSelectMultiple,
