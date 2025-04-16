@@ -1,0 +1,13 @@
+{% extends 'DevSign_Vote/base.html' %}
+{% block title %}Create Voting Session{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Create Voting Session</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Create Session</button>
+    </form>
+</div>
+{% endblock %}

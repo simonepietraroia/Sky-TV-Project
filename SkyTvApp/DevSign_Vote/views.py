@@ -3,10 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate  
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm
+from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm, VotingSessionForm
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
+from .models import Session, HealthCard
 # from .models import VotingSession, TeamSummary, DepartmentSummary
 # from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
@@ -66,21 +67,26 @@ def portal_view(request):
 
 @login_required
 def create_voting_session(request):
-    if request.method == "POST":
-        if request.user.role != "team_leader":
-            messages.error(request, "You do not have permission to create a voting session.")
-            return redirect('portal')
-
-        session_title = request.POST.get("title")
-        new_session = Session.objects.create(
-            UserID=request.user,
-            Status="Open",
-            CreatedBy=request.user,
-        )
-        messages.success(request, f"Voting session '{session_title}' created successfully!")
+    if request.user.role != "team_leader":
+        messages.error(request, "You do not have permission to create a session.")
         return redirect('portal')
 
-    return redirect('portal')
+    if request.method == "POST":
+        form = VotingSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.UserID = request.user
+            session.CreatedBy = request.user
+            session.Status = "Open"
+            session.save()
+            form.cleaned_data['health_cards'].update(SessionID=session)  # Optional, if you want a reverse relationship
+            messages.success(request, "Session created successfully!")
+            return redirect('portal')
+    else:
+        form = VotingSessionForm()
+
+    return render(request, "DevSign_Vote/create_session.html", {"form": form})
+
 @csrf_exempt
 def signup(request):
     if request.method == "POST":
