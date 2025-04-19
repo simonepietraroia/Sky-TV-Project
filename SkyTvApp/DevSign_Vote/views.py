@@ -7,14 +7,11 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm,
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Session, HealthCard, Vote, Department, Team
-from .forms import VoteForm, ProfileUpdateForm
+from .models import Session, HealthCard, Vote, Department, Team, AggregateVotesTable, TrendAnalysis
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest
-# from .models import VotingSession, TeamSummary, DepartmentSummary
-# from .models import Session, Vote, Team, Department, AggregateVotesTable, TrendAnalysis
 
 
 def homepage(request):
@@ -51,19 +48,23 @@ def portal_view(request):
     user = request.user
     context = {'user': user}
 
+    # Team Leader Section
     if user.role == "team_leader":
         context['team_sessions'] = Session.objects.filter(UserID=user.UserID)
 
+    # Department Leader Section
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
         context['department_summary'] = AggregateVotesTable.objects.filter(TeamID__in=teams)
         context['department_trends'] = TrendAnalysis.objects.filter(TeamID__in=teams)
 
+    # Senior Engineer Section
     elif user.role == "senior_engineer":
         context['company_summary'] = AggregateVotesTable.objects.all()
         context['company_trends'] = TrendAnalysis.objects.all()
 
     return render(request, 'DevSign_Vote/portal.html', context)
+
 
 @csrf_exempt
 @login_required
@@ -76,7 +77,7 @@ def create_voting_session(request):
                 return HttpResponseBadRequest("You must be assigned to a team to create a voting session.")
 
             session = form.save(commit=False)
-            session.TeamID = request.user.TeamID  # ✅ safe now
+            session.TeamID = request.user.TeamID  # safe now
             session.UserID = request.user
             session.CreatedBy = request.user  # corrected field name if needed
 
@@ -95,7 +96,7 @@ def create_voting_session(request):
             except HealthCard.DoesNotExist:
                 return HttpResponseBadRequest("Invalid health card ID.")
 
-            # ✅ Now safely create the vote
+            # Now safely create the vote
             Vote.objects.create(
                 SessionID=session,
                 UserID=request.user,
