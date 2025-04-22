@@ -12,6 +12,10 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Session, Team, Department
+
 
 
 def homepage(request):
@@ -215,4 +219,15 @@ def vote_on_session(request, session_id):
     return render(request, "DevSign_Vote/vote_session.html", {
         "session": session,
         "cards": health_cards
+    })
+    @login_required
+def session_select(request):
+    # load all sessions, plus teams & depts for filtering
+    sessions    = Session.objects.select_related('createdby__teams__department').all()
+    departments = Department.objects.all()
+    teams       = Team.objects.all()
+    return render(request, 'DevSign_Vote/session-select.html', {
+        'sessions':    sessions,
+        'departments': departments,
+        'teams':       teams,
     })

@@ -16,7 +16,10 @@ urlpatterns = [
     path("logout/", user_logout, name="logout"),
     path("create_session/", create_voting_session, name="create_session"),
     path("vote/<int:session_id>/", vote_on_session, name="voting"),
+    path('sessions/', session_select, name='session-select'),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+  
