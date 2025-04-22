@@ -221,9 +221,9 @@ def vote_on_session(request, session_id):
         "cards": health_cards
     })
     @login_required
-def session_select(request):
+    def session_select(request):
     # load all sessions, plus teams & depts for filtering
-    sessions    = Session.objects.select_related('createdby__teams__department').all()
+        sessions    = Session.objects.select_related('createdby__teams__department').all()
     departments = Department.objects.all()
     teams       = Team.objects.all()
     return render(request, 'DevSign_Vote/session-select.html', {
