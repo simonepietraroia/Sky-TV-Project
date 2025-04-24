@@ -27,20 +27,30 @@ class VotingSessionForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     start_time = forms.DateTimeField(
+        label="Start Time",
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'})
     )
     end_time = forms.DateTimeField(
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'})
+        label="End Time",
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        required=False
     )
     health_cards = forms.ModelMultipleChoiceField(
         queryset=HealthCard.objects.all(),
         widget=forms.CheckboxSelectMultiple,
-        required=True
+        required=False,
+        label="Select Health Cards"
     )
 
     class Meta:
-        model = Session
-        fields = ['start_time', 'end_time']
+        model  = Session
+        # include your new session_name + the m2m field:
+        fields = [
+            'session_name',
+            'start_time',
+            'end_time',
+            'health_cards',
+        ]
 
 class VoteForm(forms.ModelForm):
     VOTE_CHOICES = [

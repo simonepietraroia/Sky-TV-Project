@@ -232,3 +232,20 @@ def session_select(request):
         'departments': departments,
         'teams':       teams,
     })
+@login_required
+def create_voting_session(request):
+    if request.method == 'POST':
+        form = VotingSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.CreatedBy = request.user
+            # infer the TeamID however your User→Team relation works:
+            session.TeamID = request.user.teams.first()
+            session.save()
+            form.save_m2m()             # <-- this writes the health_cards M2M
+            messages.success(request, "Session created!")
+            return redirect('session-select')
+    else:
+        form = VotingSessionForm()
+
+    return render(request, 'DevSign_Vote/create-session.html', {'form': form})

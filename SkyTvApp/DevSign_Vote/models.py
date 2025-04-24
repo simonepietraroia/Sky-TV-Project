@@ -74,6 +74,12 @@ class Session(models.Model):
     CreatedBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_sessions")
     DateCreated = models.DateTimeField(auto_now_add=True)
 
+    health_cards = models.ManyToManyField(
+        HealthCard,
+        blank=True,
+        related_name='sessions',
+    )
+
     def __str__(self):
         return f"Session {self.SessionID} - {self.Status}"
 
