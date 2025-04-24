@@ -45,7 +45,7 @@
           <strong>Team:</strong> {{ session.team.name }}<br>
           <strong>When:</strong> {{ session.scheduled_date|date:"M d, Y H:i" }}
         </p>
-        <a href="{% url 'vote-session' session.id %}" class="btn btn-session">
+        <a href="" class="btn btn-session">
           Select &rarr;
         </a>
       </div>
@@ -53,5 +53,3 @@
   </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}

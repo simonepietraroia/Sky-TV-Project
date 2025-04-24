@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from DevSign_Vote.views import homepage, profile, edit_profile, signup, user_login, user_logout, create_voting_session, vote_on_session 
+from DevSign_Vote.views import homepage, profile, edit_profile, signup, user_login, user_logout, create_voting_session, vote_on_session, session_select
 
 
 urlpatterns = [

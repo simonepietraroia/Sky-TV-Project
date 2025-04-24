@@ -7,14 +7,14 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm,
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Session, HealthCard, Vote, Department, Team, AggregateVotesTable, TrendAnalysis
+from .models import Session, HealthCard, Vote, Department, Team
+# AggregateVotesTable, TrendAnalysis
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from .models import Session, Team, Department
 
 
 
@@ -220,10 +220,11 @@ def vote_on_session(request, session_id):
         "session": session,
         "cards": health_cards
     })
-    @login_required
-    def session_select(request):
-    # load all sessions, plus teams & depts for filtering
-        sessions    = Session.objects.select_related('createdby__teams__department').all()
+
+@login_required
+def session_select(request):
+    # note the uppercase 'C' and 'B' here:
+    sessions    = Session.objects.select_related('CreatedBy').all()
     departments = Department.objects.all()
     teams       = Team.objects.all()
     return render(request, 'DevSign_Vote/session-select.html', {
