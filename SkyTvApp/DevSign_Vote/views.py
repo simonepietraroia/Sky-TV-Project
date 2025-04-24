@@ -248,4 +248,4 @@ def create_voting_session(request):
     else:
         form = VotingSessionForm()
 
-    return render(request, 'DevSign_Vote/create-session.html', {'form': form})
+    return render(request, 'DevSign_Vote/create_session.html', {'form': form})

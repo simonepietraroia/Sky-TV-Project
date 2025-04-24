@@ -75,7 +75,7 @@ class Session(models.Model):
     DateCreated = models.DateTimeField(auto_now_add=True)
 
     health_cards = models.ManyToManyField(
-        HealthCard,
+        "HealthCard",
         blank=True,
         related_name='sessions',
     )
