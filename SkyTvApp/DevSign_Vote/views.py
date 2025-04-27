@@ -73,49 +73,54 @@ def portal_view(request):
 @csrf_exempt
 @login_required
 def create_voting_session(request):
+    # load departments & teams
+    departments = Department.objects.all()
+    teams       = Team.objects.all()
+
     if request.method == 'POST':
         form = VotingSessionForm(request.POST)
         if form.is_valid():
-            # Check if the user is assigned to a team
             if not request.user.TeamID:
                 return HttpResponseBadRequest("You must be assigned to a team to create a voting session.")
 
-            session = form.save(commit=False)
-            session.TeamID = request.user.TeamID  # safe now
-            session.UserID = request.user
-            session.CreatedBy = request.user  # corrected field name if needed
+            # Dept→Team consistency
+            dept_id = request.POST['department']
+            team_id = request.POST['team']
+            team    = get_object_or_404(Team, pk=team_id, DepartmentID_id=dept_id)
 
-            # Optional: clean field names if not handled in form
-            session.Name = request.POST.get('session_name')
-            session.StartTime = parse_datetime(request.POST.get('start_time'))
-            session.EndTime = parse_datetime(request.POST.get('end_time'))
-            session.Status = 'Pending'  # or any default status you use
+            # build Session
+            session           = form.save(commit=False)
+            session.TeamID    = team
+            session.UserID    = request.user
+            session.CreatedBy = request.user
+            session.Status    = 'Pending'
             session.save()
             form.save_m2m()
 
-            # Retrieve and validate the HealthCard
-            card_id = request.POST.get('health_cards')
-            try:
-                health_card = HealthCard.objects.get(CardID=card_id)
-            except HealthCard.DoesNotExist:
-                return HttpResponseBadRequest("Invalid health card ID.")
+            # create initial Votes for each selected card
+            for card in form.cleaned_data['health_cards']:
+                Vote.objects.create(
+                    SessionID = session,
+                    UserID    = request.user,
+                    TeamID    = team,
+                    CardID    = card,
+                    VoteValue = 0,
+                    Progress  = 'Not Started',
+                    Comment   = ''
+                )
 
-            # Now safely create the vote
-            Vote.objects.create(
-                SessionID=session,
-                UserID=request.user,
-                TeamID=request.user.TeamID,
-                CardID=health_card,
-                VoteValue=0,
-                Progress='Not Started',
-                Comment=''
-            )
-
-            return HttpResponse("Voting session created successfully.", status=201)
+            messages.success(request, "Session created!")
+            return redirect('session-select')
     else:
         form = VotingSessionForm()
 
-    return render(request, 'DevSign_Vote/create_session.html', {'form': form})
+    return render(request,
+                  'DevSign_Vote/create_session.html',   # ← underscore here
+                  {
+                    'form':        form,
+                    'departments': departments,
+                    'teams':       teams,
+                  })
 
 @csrf_exempt
 def signup(request):
@@ -232,20 +237,3 @@ def session_select(request):
         'departments': departments,
         'teams':       teams,
     })
-@login_required
-def create_voting_session(request):
-    if request.method == 'POST':
-        form = VotingSessionForm(request.POST)
-        if form.is_valid():
-            session = form.save(commit=False)
-            session.CreatedBy = request.user
-            # infer the TeamID however your User→Team relation works:
-            session.TeamID = request.user.teams.first()
-            session.save()
-            form.save_m2m()             # <-- this writes the health_cards M2M
-            messages.success(request, "Session created!")
-            return redirect('session-select')
-    else:
-        form = VotingSessionForm()
-
-    return render(request, 'DevSign_Vote/create_session.html', {'form': form})
