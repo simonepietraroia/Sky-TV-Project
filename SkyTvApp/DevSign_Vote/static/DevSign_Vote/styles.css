@@ -280,4 +280,11 @@ footer {
   }
 /* session select css part over */
 }
+.health-select-card {
+    transition: border-color .2s;
+    border: 1px solid #ddd;
+  }
+  .health-select-card:hover {
+    border-color: #0072C6;
+  }
 

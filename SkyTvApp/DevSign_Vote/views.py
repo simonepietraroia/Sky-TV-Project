@@ -70,60 +70,42 @@ def portal_view(request):
     return render(request, 'DevSign_Vote/portal.html', context)
 
 
-@csrf_exempt
 @login_required
+@csrf_exempt
 def create_voting_session(request):
-    departments  = Department.objects.all()
-    teams        = Team.objects.all()
-    all_cards    = HealthCard.objects.all()
+    departments = Department.objects.all()
+    teams       = Team.objects.all()
+    health_cards = HealthCard.objects.all()    # ← grab all 15 cards
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = VotingSessionForm(request.POST)
         if form.is_valid():
-            if not request.user.TeamID:
-                return HttpResponseBadRequest("…")
-
-            # Dept→Team consistency
-            dept_id = request.POST['department']
-            team_id = request.POST['team']
-            team    = get_object_or_404(Team, pk=team_id, DepartmentID_id=dept_id)
-
-            # build Session
-            session           = form.save(commit=False)
-            session.TeamID    = team
-            session.UserID    = request.user
-            session.CreatedBy = request.user
-            session.Status    = 'Pending'
-            session.save()
-
-            # assign exactly the checked cards
-            picked_ids = request.POST.getlist('health_cards')
-            cards = HealthCard.objects.filter(CardID__in=picked_ids)
-            session.health_cards.set(cards)
-
-            # seed initial Votes
-            for card in cards:
+            ...
+            # after saving the session you do:
+            picked = form.cleaned_data['health_cards']
+            session.health_cards.set(picked)
+            for card in picked:
                 Vote.objects.create(
-                    SessionID = session,
-                    UserID    = request.user,
-                    TeamID    = team,
-                    CardID    = card,
-                    VoteValue = 0,
-                    Progress  = 'Not Started',
-                    Comment   = ''
+                  SessionID=session,
+                  UserID=request.user,
+                  TeamID=team,
+                  CardID=card,
+                  VoteValue=0,
+                  Progress='Not Started',
+                  Comment=''
                 )
-
-            messages.success(request, "Session created!")
-            return redirect('session-select')
+            ...
     else:
         form = VotingSessionForm()
 
-    return render(request, 'DevSign_Vote/create_session.html', {
-        'form':         form,
-        'departments':  departments,
-        'teams':        teams,
-        'health_cards': all_cards,
-    })
+    return render(request,
+                  "DevSign_Vote/create_session.html",   # ← note underscore
+                  {
+                    "form":         form,
+                    "departments":  departments,
+                    "teams":        teams,
+                    "health_cards": health_cards,          # ← send them down
+                  })
 @csrf_exempt
 def signup(request):
     if request.method == "POST":
