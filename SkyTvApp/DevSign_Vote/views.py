@@ -14,7 +14,7 @@ from django.utils.dateparse import parse_datetime
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 
 
 
@@ -73,15 +73,15 @@ def portal_view(request):
 @csrf_exempt
 @login_required
 def create_voting_session(request):
-    # load departments & teams
-    departments = Department.objects.all()
-    teams       = Team.objects.all()
+    departments  = Department.objects.all()
+    teams        = Team.objects.all()
+    all_cards    = HealthCard.objects.all()
 
     if request.method == 'POST':
         form = VotingSessionForm(request.POST)
         if form.is_valid():
             if not request.user.TeamID:
-                return HttpResponseBadRequest("You must be assigned to a team to create a voting session.")
+                return HttpResponseBadRequest("…")
 
             # Dept→Team consistency
             dept_id = request.POST['department']
@@ -95,10 +95,14 @@ def create_voting_session(request):
             session.CreatedBy = request.user
             session.Status    = 'Pending'
             session.save()
-            form.save_m2m()
 
-            # create initial Votes for each selected card
-            for card in form.cleaned_data['health_cards']:
+            # assign exactly the checked cards
+            picked_ids = request.POST.getlist('health_cards')
+            cards = HealthCard.objects.filter(CardID__in=picked_ids)
+            session.health_cards.set(cards)
+
+            # seed initial Votes
+            for card in cards:
                 Vote.objects.create(
                     SessionID = session,
                     UserID    = request.user,
@@ -114,14 +118,12 @@ def create_voting_session(request):
     else:
         form = VotingSessionForm()
 
-    return render(request,
-                  'DevSign_Vote/create_session.html',   # ← underscore here
-                  {
-                    'form':        form,
-                    'departments': departments,
-                    'teams':       teams,
-                  })
-
+    return render(request, 'DevSign_Vote/create_session.html', {
+        'form':         form,
+        'departments':  departments,
+        'teams':        teams,
+        'health_cards': all_cards,
+    })
 @csrf_exempt
 def signup(request):
     if request.method == "POST":
