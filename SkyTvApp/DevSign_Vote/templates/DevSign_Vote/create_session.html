@@ -10,30 +10,31 @@
         {% csrf_token %}
         <div class="row g-3">
 
-          <!-- Department -->
+          <!-- Department Select -->
           <div class="col-md-6">
             <label for="departmentSelect" class="form-label">Department</label>
             <select id="departmentSelect" name="department" class="form-control">
               <option value="">Choose…</option>
-              {% for dept in departments %}
-                <option value="{{ dept.DepartmentID }}">{{ dept.DepartmentName }}</option>
+              {% for department in departments %}
+                <option value="{{ department.DepartmentID }}">
+                  {{ department.DepartmentName }}
+                </option>
               {% endfor %}
             </select>
           </div>
 
-          <!-- Team -->
+          <!-- Team Select -->
           <div class="col-md-6">
             <label for="teamSelect" class="form-label">Team</label>
             <select id="teamSelect" name="team" class="form-control">
-              <option value="">Choose…</option>
-              {% for TeamID in teams %}
+              <option value="">Select Department First...</option>
+              {% for team in teams %}
                 <option value="{{ team.TeamID }}" data-dept="{{ team.DepartmentID_id }}">
-                  {{ team.TeamID }}
+                  {{ team.Name }}
                 </option>
               {% empty %}
                 <option disabled>No teams available</option>
               {% endfor %}
-            </select>
             </select>
           </div>
 

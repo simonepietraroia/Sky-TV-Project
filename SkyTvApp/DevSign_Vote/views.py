@@ -52,17 +52,14 @@ def portal_view(request):
     user = request.user
     context = {'user': user}
 
-    # Team Leader Section
     if user.role == "team_leader":
         context['team_sessions'] = Session.objects.filter(UserID=user.UserID)
 
-    # Department Leader Section
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
         context['department_summary'] = AggregateVotesTable.objects.filter(TeamID__in=teams)
         context['department_trends'] = TrendAnalysis.objects.filter(TeamID__in=teams)
 
-    # Senior Engineer Section
     elif user.role == "senior_engineer":
         context['company_summary'] = AggregateVotesTable.objects.all()
         context['company_trends'] = TrendAnalysis.objects.all()
@@ -72,33 +69,27 @@ def portal_view(request):
 @login_required
 @csrf_exempt
 def create_voting_session(request):
-    departments = Department.objects.all()
-    teams = Team.objects.all()
-    health_cards = HealthCard.objects.all()
+    if request.method == 'POST':
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        status = "Open" 
 
-    if request.method == "POST":
-        form = VotingSessionForm(request.POST)
-        if form.is_valid():
-            session = form.save(commit=False)
-            session.UserID = request.user    
-            session.Status = "Open"
-            session.CreatedBy = request.user
-            session.save()
-            form.save_m2m()  
+        if start_time:
+            start_time = parse_datetime(start_time)
+        if end_time:
+            end_time = parse_datetime(end_time)
 
-            messages.success(request, "Voting session created successfully.")
-            return redirect('portal')   
-        else:
-            messages.error(request, "There was an error creating the session.")
+        session = Session.objects.create(
+            UserID=request.user,        
+            StartTime=start_time,
+            EndTime=end_time,
+            Status=status,
+            CreatedBy=request.user      
+        )
+
+        return redirect('/')  
     else:
-        form = VotingSessionForm()
-
-    return render(request, "DevSign_Vote/create_session.html", {
-        "form": form,
-        "departments": departments,
-        "teams": teams,
-        "health_cards": health_cards,
-    })
+        return render(request, 'DevSign_Vote/create_session.html')
 
 @csrf_exempt
 def signup(request):
@@ -206,12 +197,30 @@ def vote_on_session(request, session_id):
 
 @login_required
 def session_select(request):
-    # note the uppercase 'C' and 'B' here:
     sessions    = Session.objects.select_related('CreatedBy').all()
     departments = Department.objects.all()
     teams       = Team.objects.all()
+
     return render(request, 'DevSign_Vote/session-select.html', {
         'sessions':    sessions,
         'departments': departments,
         'teams':       teams,
+    })
+
+@login_required
+def join_session(request, session_id):
+    session = get_object_or_404(Session, pk=session_id)
+    cards = session.health_cards.all()
+
+    if request.method == 'POST':
+        for card in cards:
+            vote = request.POST.get(f'vote_{card.CardID}')
+            trend = request.POST.get(f'trend_{card.CardID}')
+            comment = request.POST.get(f'comment_{card.CardID}')
+
+        return redirect('home')  
+
+    return render(request, 'DevSign_Vote/voting.html', {
+        'session': session,
+        'cards': cards,
     })

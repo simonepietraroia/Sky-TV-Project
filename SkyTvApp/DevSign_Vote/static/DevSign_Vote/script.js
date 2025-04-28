@@ -38,23 +38,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamSelect = document.getElementById('teamSelect');
   
     function filterTeams() {
-      const chosen = deptSelect.value;
-      Array.from(teamSelect.options).forEach(opt => {
-        if (!opt.value) return;         // skip the “Choose…” placeholder
-        // show only if data-dept matches
-        opt.style.display = opt.dataset.dept === chosen ? '' : 'none';
+      const selectedDept = deptSelect.value;
+      Array.from(teamSelect.options).forEach(option => {
+        if (!option.value) return; // Skip the placeholder
+        if (option.dataset.dept === selectedDept) {
+          option.style.display = '';
+        } else {
+          option.style.display = 'none';
+        }
       });
-      // if the current team is now hidden, reset it
-      if (teamSelect.selectedIndex > 0 &&
-          teamSelect.options[teamSelect.selectedIndex].style.display === 'none') {
+      // Reset team selection if not visible
+      if (teamSelect.selectedIndex > 0 && teamSelect.options[teamSelect.selectedIndex].style.display === 'none') {
         teamSelect.value = '';
       }
     }
   
     deptSelect.addEventListener('change', filterTeams);
-    // run once on load in case of a pre-selected department
-    filterTeams();
-  });
+    filterTeams(); // Run once at start
+  });  
 
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('input[name="health_cards"]');

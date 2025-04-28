@@ -7,47 +7,28 @@
 <div class="container mt-5">
   <h2 class="text-center mb-4">Choose Your Health‑Check Session</h2>
 
-  <!-- FILTERS -->
-  <div class="row mb-5">
-    <div class="col-sm-6 col-md-4 mb-3">
-      <label for="departmentSelect" class="form-label">Department</label>
-      <select id="departmentSelect" class="form-control">
-        <option value="">All Departments</option>
-        {% for dept in departments %}
-          <option value="{{ dept.id }}">{{ dept.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-sm-6 col-md-4 mb-3">
-      <label for="teamSelect" class="form-label">Team</label>
-      <select id="teamSelect" class="form-control">
-        <option value="">All Teams</option>
-        {% for team in teams %}
-          <option value="{{ team.id }}" data-dept="{{ team.department.id }}">
-            {{ team.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-  </div>
-
   <!-- SESSIONS GRID -->
-  <div id="sessionsContainer" class="sessions-grid">
+  <div id="sessionsContainer" class="row row-cols-1 row-cols-md-2 g-4">
     {% for session in sessions %}
-      <div
-        class="session-card"
-        data-dept="{{ session.team.department.id }}"
-        data-team="{{ session.team.id }}"
-      >
-        <h5 class="session-title">{{ session.title }}</h5>
-        <p class="session-meta">
-          <strong>Dept:</strong> {{ session.team.department.name }}<br>
-          <strong>Team:</strong> {{ session.team.name }}<br>
-          <strong>When:</strong> {{ session.scheduled_date|date:"M d, Y H:i" }}
-        </p>
-        <a href="" class="btn btn-session">
-          Select &rarr;
-        </a>
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Session #{{ session.SessionID }}</h5>
+            <p class="card-text">
+              <strong>Status:</strong> {{ session.Status }}<br>
+              <strong>Created by:</strong> {{ session.CreatedBy.username|default:"Unknown" }}<br>
+              <strong>Start:</strong> {{ session.StartTime|date:"M d, Y H:i" }}<br>
+              {% if session.EndTime %}
+                <strong>End:</strong> {{ session.EndTime|date:"M d, Y H:i" }}
+              {% endif %}
+            </p>
+            <a href="{% url 'join_session' session.SessionID %}" class="btn btn-primary">Select &rarr;</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <p>No sessions available at the moment.</p>
       </div>
     {% endfor %}
   </div>
