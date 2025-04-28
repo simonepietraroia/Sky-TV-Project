@@ -26,9 +26,14 @@
             <label for="teamSelect" class="form-label">Team</label>
             <select id="teamSelect" name="team" class="form-control">
               <option value="">Choose…</option>
-              {% for team in teams %}
-                <option value="{{ team.TeamID }}" data-dept="{{ team.DepartmentID_id }}">{{ team.TeamName }}</option>
+              {% for TeamID in teams %}
+                <option value="{{ team.TeamID }}" data-dept="{{ team.DepartmentID_id }}">
+                  {{ team.TeamID }}
+                </option>
+              {% empty %}
+                <option disabled>No teams available</option>
               {% endfor %}
+            </select>
             </select>
           </div>
 
