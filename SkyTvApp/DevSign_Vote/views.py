@@ -69,43 +69,37 @@ def portal_view(request):
 
     return render(request, 'DevSign_Vote/portal.html', context)
 
-
 @login_required
 @csrf_exempt
 def create_voting_session(request):
     departments = Department.objects.all()
-    teams       = Team.objects.all()
-    health_cards = HealthCard.objects.all()    # ← grab all 15 cards
+    teams = Team.objects.all()
+    health_cards = HealthCard.objects.all()
 
     if request.method == "POST":
         form = VotingSessionForm(request.POST)
         if form.is_valid():
-            ...
-            # after saving the session you do:
-            picked = form.cleaned_data['health_cards']
-            session.health_cards.set(picked)
-            for card in picked:
-                Vote.objects.create(
-                  SessionID=session,
-                  UserID=request.user,
-                  TeamID=team,
-                  CardID=card,
-                  VoteValue=0,
-                  Progress='Not Started',
-                  Comment=''
-                )
-            ...
+            session = form.save(commit=False)
+            session.UserID = request.user    
+            session.Status = "Open"
+            session.CreatedBy = request.user
+            session.save()
+            form.save_m2m()  
+
+            messages.success(request, "Voting session created successfully.")
+            return redirect('portal')   
+        else:
+            messages.error(request, "There was an error creating the session.")
     else:
         form = VotingSessionForm()
 
-    return render(request,
-                  "DevSign_Vote/create_session.html",   # ← note underscore
-                  {
-                    "form":         form,
-                    "departments":  departments,
-                    "teams":        teams,
-                    "health_cards": health_cards,          # ← send them down
-                  })
+    return render(request, "DevSign_Vote/create_session.html", {
+        "form": form,
+        "departments": departments,
+        "teams": teams,
+        "health_cards": health_cards,
+    })
+
 @csrf_exempt
 def signup(request):
     if request.method == "POST":

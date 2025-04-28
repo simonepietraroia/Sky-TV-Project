@@ -167,6 +167,14 @@ footer {
     background: linear-gradient(to right, #005A9C, #2A6AD0);
 }
 
+.health-select-card {
+    transition: transform 0.2s ease;
+  }
+  .health-select-card:hover {
+    transform: scale(1.03);
+    border-color: #0d6efd; 
+  }
+
 @media (max-width: 768px) {
     .profile-dropdown.show {
         display: block;

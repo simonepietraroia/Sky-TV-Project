@@ -16,9 +16,7 @@
             <select id="departmentSelect" name="department" class="form-control">
               <option value="">Choose…</option>
               {% for dept in departments %}
-                <option value="{{ dept.DepartmentID }}">
-                  {{ dept.DepartmentName }}
-                </option>
+                <option value="{{ dept.DepartmentID }}">{{ dept.DepartmentName }}</option>
               {% endfor %}
             </select>
           </div>
@@ -29,10 +27,7 @@
             <select id="teamSelect" name="team" class="form-control">
               <option value="">Choose…</option>
               {% for team in teams %}
-                <option
-                  value="{{ team.TeamID }}"
-                  data-dept="{{ team.DepartmentID_id }}"
-                >{{ team.TeamName }}</option>
+                <option value="{{ team.TeamID }}" data-dept="{{ team.DepartmentID_id }}">{{ team.TeamName }}</option>
               {% endfor %}
             </select>
           </div>
@@ -54,63 +49,48 @@
           </div>
 
           <!-- Health Cards -->
-         <!-- Health Cards -->
-         <div class="col-12">
-          <label class="form-label mb-3">Select Health Cards</label>
-          <div class="row g-3">
-            {% for card in health_cards %}
-              <div class="col-md-6">
-                <div class="card p-3 health-select-card h-100">
-                  <label class="d-flex align-items-start">
-                    <input
-                      type="checkbox"
-                      name="health_cards"
-                      value="{{ card.CardID }}"
-                      class="form-check-input me-2 mt-1"
-                    >
-                    <div>
-                      <h5 class="mb-1">{{ card.CardName }}</h5>
-                      <p class="mb-0 small text-muted">{{ card.Description }}</p>
-                    </div>
-                  </label>
+          <div class="col-12">
+            <label class="form-label mb-3">Select Health Cards</label>
+            <div class="row g-3">
+              {% for card in health_cards %}
+                <div class="col-md-6">
+                  <div class="card shadow-sm rounded-3 p-4 h-100 border border-primary">
+                    <label class="d-flex align-items-start">
+                      <input
+                        type="checkbox"
+                        name="health_cards"
+                        value="{{ card.CardID }}"
+                        class="form-check-input me-3 mt-1"
+                      >
+                      <div>
+                        <h5 class="fw-bold text-primary">{{ card.CardName }}</h5>
+                        <p class="text-muted small">{{ card.Description }}</p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-              </div>
-            {% endfor %}
+              {% endfor %}
+            </div> <!-- Close row g-3 for health cards -->
+          </div> <!-- Close col-12 for health cards -->
+
+          <!-- Live Preview Section -->
+          <div class="col-12 mt-5">
+            <h4 class="mb-3 text-primary">Preview for Engineers:</h4>
+            <div id="preview-area" class="row g-3">
+              <!-- Selected cards will appear here -->
+            </div>
           </div>
-        </div> 
-        <div class="mt-4 d-flex justify-content-end">
-          <button type="submit" class="btn btn-primary btn-lg px-4">
-            Create Session
-          </button>
-        </div>
-      </form>
+
+          <!-- Submit button -->
+          <div class="mt-4 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-lg px-4">
+              Create Session
+            </button>
+          </div>
+
+        </div> <!-- Close row g-3 -->
+      </form> <!-- Close form -->
     </div>
   </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const deptSelect = document.getElementById('departmentSelect');
-  const teamSelect = document.getElementById('teamSelect');
-
-  function filterTeams() {
-    const chosen = deptSelect.value;
-    Array.from(teamSelect.options).forEach(opt => {
-      if (!opt.value) return;         // skip the “Choose…” placeholder
-      // show only if data-dept matches
-      opt.style.display = opt.dataset.dept === chosen ? '' : 'none';
-    });
-    // if the current team is now hidden, reset it
-    if (teamSelect.selectedIndex > 0 &&
-        teamSelect.options[teamSelect.selectedIndex].style.display === 'none') {
-      teamSelect.value = '';
-    }
-  }
-
-  deptSelect.addEventListener('change', filterTeams);
-  // run once on load in case of a pre-selected department
-  filterTeams();
-});
-</script>
 {% endblock %}
-
