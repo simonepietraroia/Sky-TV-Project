@@ -112,7 +112,7 @@ footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to right, #0072C6, #3A86FF);
+    background: linear-gradient(to right, #ffffff, #ffffff);
     font-family: Arial, sans-serif;
 }
 .login-container {
@@ -134,7 +134,7 @@ footer {
     padding: 40px;
 }
 .left-section img {
-    max-width: 150px;
+    max-width: 195px;
     margin-bottom: 20px;
 }
 .right-section {
