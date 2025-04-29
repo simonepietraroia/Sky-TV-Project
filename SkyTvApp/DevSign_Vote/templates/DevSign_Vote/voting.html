@@ -1,32 +1,55 @@
+{% extends 'DevSign_Vote/base.html' %}
+{% load static %}
+
+{% block title %}Vote Session{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Vote for Session: {{ session }}</h2>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Vote for Session: {{ session.session_name }}</h2>
+
     <form method="post">
         {% csrf_token %}
         {% for card in cards %}
-            <div class="card my-3 p-3">
-                <h5>{{ card.Description }}</h5>
+            <div class="card mb-4 shadow-sm rounded p-4">
+                <h5 class="card-title mb-3">{{ card.Description }}</h5>
 
-                <div class="mb-2">
-                    <label class="form-label">Vote</label><br>
-                    <label><input type="radio" name="vote_{{ card.CardID }}" value="1"> 🔴 Red</label>&nbsp;
-                    <label><input type="radio" name="vote_{{ card.CardID }}" value="2"> 🟡 Yellow</label>&nbsp;
-                    <label><input type="radio" name="vote_{{ card.CardID }}" value="3"> 🟢 Green</label>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Vote</label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="vote_{{ card.CardID }}" value="1" id="vote_red_{{ card.CardID }}">
+                        <label class="form-check-label" for="vote_red_{{ card.CardID }}">🔴 Red</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="vote_{{ card.CardID }}" value="2" id="vote_yellow_{{ card.CardID }}">
+                        <label class="form-check-label" for="vote_yellow_{{ card.CardID }}">🟡 Yellow</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="vote_{{ card.CardID }}" value="3" id="vote_green_{{ card.CardID }}">
+                        <label class="form-check-label" for="vote_green_{{ card.CardID }}">🟢 Green</label>
+                    </div>
                 </div>
 
-                <div class="mb-2">
-                    <label class="form-label">Trend</label><br>
-                    <label><input type="radio" name="trend_{{ card.CardID }}" value="up"> ⬆️ Up</label>&nbsp;
-                    <label><input type="radio" name="trend_{{ card.CardID }}" value="down"> ⬇️ Down</label>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Trend</label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="trend_{{ card.CardID }}" value="up" id="trend_up_{{ card.CardID }}">
+                        <label class="form-check-label" for="trend_up_{{ card.CardID }}">⬆️ Trending Up</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="trend_{{ card.CardID }}" value="down" id="trend_down_{{ card.CardID }}">
+                        <label class="form-check-label" for="trend_down_{{ card.CardID }}">⬇️ Trending Down</label>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="form-label">Comment</label>
-                    <textarea name="comment_{{ card.CardID }}" rows="2" class="form-control" placeholder="Your thoughts..."></textarea>
+                <div class="mb-3">
+                    <label for="comment_{{ card.CardID }}" class="form-label fw-bold">Comment</label>
+                    <textarea name="comment_{{ card.CardID }}" id="comment_{{ card.CardID }}" rows="2" class="form-control" placeholder="Your thoughts..."></textarea>
                 </div>
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Submit Votes</button>
+        <div class="text-center">
+            <button type="submit" class="btn btn-success btn-lg px-5">Submit Votes</button>
+        </div>
     </form>
 </div>
 {% endblock %}

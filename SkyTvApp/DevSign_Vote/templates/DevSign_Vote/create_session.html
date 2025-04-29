@@ -1,102 +1,28 @@
 {% extends 'DevSign_Vote/base.html' %}
-{% block title %}Create a Voting Session{% endblock %}
+{% block title %}Create Session{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="card shadow-lg rounded-4 p-4">
-    <div class="card-body">
-      <h2 class="card-title mb-4 text-primary">Create a Voting Session</h2>
-      <form method="post">
+<div class="container mt-5">
+    <h2>Create a New Voting Session</h2>
+    <form method="post">
         {% csrf_token %}
-        <div class="row g-3">
-
-          <!-- Department Select -->
-          <div class="col-md-6">
-            <label for="departmentSelect" class="form-label">Department</label>
-            <select id="departmentSelect" name="department" class="form-control">
-              <option value="">Choose…</option>
-              {% for department in departments %}
-                <option value="{{ department.DepartmentID }}">
-                  {{ department.DepartmentName }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Team Select -->
-          <div class="col-md-6">
-            <label for="teamSelect" class="form-label">Team</label>
-            <select id="teamSelect" name="team" class="form-control">
-              <option value="">Select Department First...</option>
-              {% for team in teams %}
-                <option value="{{ team.TeamID }}" data-dept="{{ team.DepartmentID_id }}">
-                  {{ team.Name }}
-                </option>
-              {% empty %}
-                <option disabled>No teams available</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Session Name -->
-          <div class="col-md-6">
-            <label for="id_session_name" class="form-label">Session Name</label>
+        <div class="mb-3">
+            {{ form.session_name.label_tag }}
             {{ form.session_name }}
-          </div>
-
-          <!-- Start / End -->
-          <div class="col-md-6">
-            <label for="id_start_time" class="form-label">Start Time</label>
-            {{ form.start_time }}
-          </div>
-          <div class="col-md-6">
-            <label for="id_end_time" class="form-label">End Time</label>
-            {{ form.end_time }}
-          </div>
-
-          <!-- Health Cards -->
-          <div class="col-12">
-            <label class="form-label mb-3">Select Health Cards</label>
-            <div class="row g-3">
-              {% for card in health_cards %}
-                <div class="col-md-6">
-                  <div class="card shadow-sm rounded-3 p-4 h-100 border border-primary">
-                    <label class="d-flex align-items-start">
-                      <input
-                        type="checkbox"
-                        name="health_cards"
-                        value="{{ card.CardID }}"
-                        class="form-check-input me-3 mt-1"
-                      >
-                      <div>
-                        <h5 class="fw-bold text-primary">{{ card.CardName }}</h5>
-                        <p class="text-muted small">{{ card.Description }}</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              {% endfor %}
-            </div> <!-- Close row g-3 for health cards -->
-          </div> <!-- Close col-12 for health cards -->
-
-          <!-- Live Preview Section -->
-          <div class="col-12 mt-5">
-            <h4 class="mb-3 text-primary">Preview for Engineers:</h4>
-            <div id="preview-area" class="row g-3">
-              <!-- Selected cards will appear here -->
-            </div>
-          </div>
-
-          <!-- Submit button -->
-          <div class="mt-4 d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary btn-lg px-4">
-              Create Session
-            </button>
-          </div>
-
-        </div> <!-- Close row g-3 -->
-      </form> <!-- Close form -->
-    </div>
-  </div>
+        </div>
+        <div class="mb-3">
+            {{ form.StartTime.label_tag }}
+            {{ form.StartTime }}
+        </div>
+        <div class="mb-3">
+            {{ form.EndTime.label_tag }}
+            {{ form.EndTime }}
+        </div>
+        <div class="mb-3">
+            <label>Select Health Cards:</label>
+            {{ form.health_cards }}
+        </div>
+        <button type="submit" class="btn btn-primary">Create Session</button>
+    </form>
 </div>
 {% endblock %}

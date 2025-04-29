@@ -7,7 +7,7 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm,
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Session, HealthCard, Vote, Department, Team
+from .models import Session, HealthCard, Department, Team, Vote
 # AggregateVotesTable, TrendAnalysis
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -69,27 +69,25 @@ def portal_view(request):
 @login_required
 @csrf_exempt
 def create_voting_session(request):
+    if not request.user.is_team_leader():
+        messages.error(request, "Only team leaders can create sessions.")
+        return redirect('home')
+
     if request.method == 'POST':
-        start_time = request.POST.get('start_time')
-        end_time = request.POST.get('end_time')
-        status = "Open" 
+        form = VotingSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.UserID = request.user
+            session.Status = "Open"
+            session.save()
+            form.save_m2m()
 
-        if start_time:
-            start_time = parse_datetime(start_time)
-        if end_time:
-            end_time = parse_datetime(end_time)
-
-        session = Session.objects.create(
-            UserID=request.user,        
-            StartTime=start_time,
-            EndTime=end_time,
-            Status=status,
-            CreatedBy=request.user      
-        )
-
-        return redirect('/')  
+            messages.success(request, "Session created successfully!")
+            return redirect('session-select')
     else:
-        return render(request, 'DevSign_Vote/create_session.html')
+        form = VotingSessionForm()
+
+    return render(request, 'DevSign_Vote/create_session.html', {'form': form})
 
 @csrf_exempt
 def signup(request):
@@ -197,14 +195,13 @@ def vote_on_session(request, session_id):
 
 @login_required
 def session_select(request):
-    sessions    = Session.objects.select_related('CreatedBy').all()
-    departments = Department.objects.all()
-    teams       = Team.objects.all()
+    from django.utils import timezone
+    now = timezone.now()
+
+    sessions = Session.objects.filter(Status="Open", EndTime__gt=now)
 
     return render(request, 'DevSign_Vote/session-select.html', {
-        'sessions':    sessions,
-        'departments': departments,
-        'teams':       teams,
+        'sessions': sessions,
     })
 
 @login_required
@@ -213,12 +210,28 @@ def join_session(request, session_id):
     cards = session.health_cards.all()
 
     if request.method == 'POST':
+        if not request.user.TeamID:
+            messages.error(request, "You must belong to a team to submit votes.")
+            return redirect('session-select')
+
         for card in cards:
-            vote = request.POST.get(f'vote_{card.CardID}')
-            trend = request.POST.get(f'trend_{card.CardID}')
+            vote_value = request.POST.get(f'vote_{card.CardID}')
+            progress = request.POST.get(f'trend_{card.CardID}')
             comment = request.POST.get(f'comment_{card.CardID}')
 
-        return redirect('home')  
+            if vote_value and progress:
+                Vote.objects.create(
+                    TeamID=request.user.TeamID,
+                    UserID=request.user,
+                    CardID=card,
+                    SessionID=session,
+                    VoteValue=vote_value,
+                    Progress=progress,
+                    Comment=comment
+                )
+
+        messages.success(request, "Your votes have been submitted successfully!")
+        return redirect('/')  # or wherever you want
 
     return render(request, 'DevSign_Vote/voting.html', {
         'session': session,

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin  
 from .models import User, Team, Department, Session, HealthCard, Vote
 
+
 class CustomUserAdmin(UserAdmin):
     list_display = ('first_name', 'last_name', 'email', 'role')  
     search_fields = ('first_name', 'last_name', 'email')
@@ -16,14 +17,21 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'role', 'password1', 'password2')}
-        ),
+            'fields': ('email', 'first_name', 'last_name', 'role', 'password1', 'password2')})
     )
-    
+
+class VoteInline(admin.TabularInline):
+    model = Vote
+    extra = 0
+
+class SessionAdmin(admin.ModelAdmin):
+    inlines = [VoteInline]
+    list_display = ['session_name', 'Status', 'StartTime', 'EndTime']
+
 
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Team)
 admin.site.register(Department)
-admin.site.register(Session)
+admin.site.register(Session, SessionAdmin)  
 admin.site.register(HealthCard)
 admin.site.register(Vote)

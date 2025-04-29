@@ -67,35 +67,23 @@ class Team(models.Model):
 
 class Session(models.Model):
     SessionID = models.AutoField(primary_key=True)
-    UserID = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sessions")
+    UserID = models.ForeignKey('DevSign_Vote.User', on_delete=models.CASCADE, related_name="sessions")
+    session_name = models.CharField(max_length=255)
     StartTime = models.DateTimeField()
-    EndTime = models.DateTimeField(null=True, blank=True)
-    Status = models.CharField(max_length=50)
-    CreatedBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_sessions")
+    EndTime = models.DateTimeField()
+    Status = models.CharField(max_length=50, default="Open")
     DateCreated = models.DateTimeField(auto_now_add=True)
 
-    health_cards = models.ManyToManyField(
-        "HealthCard",
-        blank=True,
-        related_name='sessions',
-    )
+    health_cards = models.ManyToManyField('DevSign_Vote.HealthCard', blank=True, related_name='sessions')
 
     def __str__(self):
-        return f"Session {self.SessionID} - {self.Status}"
+        return f"{self.session_name} ({self.Status})"
 
-class Vote(models.Model):
-    VoteID = models.AutoField(primary_key=True)
-    TeamID = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="votes")
-    UserID = models.ForeignKey(User, on_delete=models.CASCADE, related_name="votes")
-    CardID = models.ForeignKey('HealthCard', on_delete=models.CASCADE, related_name="votes")
-    SessionID = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="votes")
-    VoteValue = models.IntegerField()
-    Progress = models.CharField(max_length=50)
-    TimeStamp = models.DateTimeField(auto_now_add=True)
-    Comment = models.TextField(blank=True, null=True)
+    def is_active(self):
+        """Check if the session is still active based on EndTime"""
+        from django.utils import timezone
+        return self.EndTime > timezone.now() and self.Status == "Open"
 
-    def __str__(self):
-        return f"Vote {self.VoteID} - {self.VoteValue}"
 
 class HealthCard(models.Model):
     CardID = models.AutoField(primary_key=True)
@@ -131,3 +119,17 @@ class TrendAnalysis(models.Model):
 
     def __str__(self):
         return f"Trend {self.TrendID} - {self.AnalysisType}"
+
+class Vote(models.Model):
+    VoteID = models.AutoField(primary_key=True)
+    TeamID = models.ForeignKey('DevSign_Vote.Team', on_delete=models.CASCADE, related_name="votes")
+    UserID = models.ForeignKey('DevSign_Vote.User', on_delete=models.CASCADE, related_name="votes")
+    CardID = models.ForeignKey('DevSign_Vote.HealthCard', on_delete=models.CASCADE, related_name="votes")
+    SessionID = models.ForeignKey('DevSign_Vote.Session', on_delete=models.CASCADE, related_name="votes")
+    VoteValue = models.IntegerField()
+    Progress = models.CharField(max_length=50)
+    TimeStamp = models.DateTimeField(auto_now_add=True)
+    Comment = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Vote {self.VoteID} - {self.VoteValue}"

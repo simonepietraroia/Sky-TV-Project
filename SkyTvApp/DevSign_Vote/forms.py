@@ -21,37 +21,17 @@ class EmailAuthenticationForm(AuthenticationForm):
     username = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
 
 class VotingSessionForm(forms.ModelForm):
-    session_name = forms.CharField(
-        label="Session Name",
-        max_length=255,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-    start_time = forms.DateTimeField(
-        label="Start Time",
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'})
-    )
-    end_time = forms.DateTimeField(
-        label="End Time",
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-        required=False
-    )
-    health_cards = forms.ModelMultipleChoiceField(
-        queryset=HealthCard.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Health Cards"
-    )
-
     class Meta:
-        model  = Session
-        # include your new session_name + the m2m field:
-        fields = [
-            'session_name',
-            'start_time',
-            'end_time',
-            'health_cards',
-        ]
+        model = Session
+        fields = ['session_name', 'StartTime', 'EndTime', 'health_cards']
 
+        widgets = {
+            'session_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'StartTime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'EndTime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'health_cards': forms.CheckboxSelectMultiple()
+        }
+        
 class VoteForm(forms.ModelForm):
     VOTE_CHOICES = [
         (1, '🔴 Red'), (2, '🟡 Yellow'), (3, '🟢 Green')
