@@ -198,8 +198,21 @@ def session_select(request):
     now = timezone.now()
     sessions = Session.objects.filter(Status="Open", EndTime__gt=now)
 
+    department_id = request.GET.get('department')
+    team_id = request.GET.get('team')
+
+    if department_id:
+        sessions = sessions.filter(DepartmentID=department_id)
+    if team_id:
+        sessions = sessions.filter(TeamID=team_id)
+
+    departments = Department.objects.all()
+    teams = Team.objects.all()
+
     return render(request, 'DevSign_Vote/session-select.html', {
         'sessions': sessions,
+        'departments': departments,
+        'teams': teams,
     })
 
 @login_required
