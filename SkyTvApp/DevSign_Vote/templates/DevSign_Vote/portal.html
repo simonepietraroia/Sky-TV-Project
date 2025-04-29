@@ -5,7 +5,7 @@
 {% block content %}
 <style>
     body {
-        background: #f0f5ff;
+        background: #f0f5ff !important;
         font-family: 'Segoe UI', sans-serif;
         color: #222;
         margin: 0;
@@ -41,107 +41,102 @@
     }
 </style>
 
-<h1>Welcome, {{ user.get_full_name }}</h1>
-<p>Your role: <strong>{{ user.role }}</strong></p>
+<div class="container">
+    <h1>Welcome, {{ user.get_full_name }}</h1>
+    <p>Your role: <strong>{{ user.role }}</strong></p>
 
-{# --- TEAM LEADER BLOCK --- #}
-{% if user.role == "team_leader" %}
-<div class="role-section">
-    <h2>Manage Your Team's Voting Sessions</h2>
+    {% if user.role == "team_leader" %}
+    <div class="role-section">
+        <h2>Your Team's Voting Sessions</h2>
 
-    <form action="{% url 'create_voting_session' %}" method="post">
-        {% csrf_token %}
-        <input type="text" name="title" placeholder="Session Title" required>
-        <button type="submit">Create Voting Session</button>
-    </form>
+        {% if team_sessions %}
+            <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
+                <option value="all">All Sessions</option>
+                {% for session in team_sessions %}
+                    <option value="{{ session.SessionID }}">{{ session.session_name }}</option>
+                {% endfor %}
+            </select>
 
-    <h3>Your Team's Voting Sessions</h3>
+            <ul id="team-sessions-list" class="list-group mt-3">
+                {% for session in team_sessions %}
+                    <li class="list-group-item" data-session-id="{{ session.SessionID }}">
+                        <strong>{{ session.session_name }}</strong> –
+                        {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} –
+                        Status: {{ session.Status }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No previous sessions.</p>
+        {% endif %}
 
-    {% if team_sessions %}
-        <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
-            <option value="all">All Sessions</option>
-            {% for session in team_sessions %}
-                <option value="{{ session.SessionID }}">{{ session.session_name }}</option>
+        <div class="chart-container">
+            <h4>Team Vote Distribution</h4>
+            <canvas id="departmentPieChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.role == "department_leader" or user.role == "senior_engineer" %}
+    <div class="role-section">
+        <h2>Department Summary</h2>
+        <select id="team-dropdown" class="form-select" onchange="filterTeams()">
+            <option value="all">All Teams</option>
+            {% for team in department_summary %}
+                <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
             {% endfor %}
         </select>
 
-        <ul id="team-sessions-list" class="list-group mt-3">
-            {% for session in team_sessions %}
-                <li class="list-group-item" data-session-id="{{ session.SessionID }}">
-                    <strong>{{ session.session_name }}</strong> –
-                    {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} –
-                    Status: {{ session.Status }}
+        <ul id="department-summary-list" class="list-group mt-3">
+            {% for team in department_summary %}
+                <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
+                    Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
                 </li>
+            {% empty %}
+                <li class="list-group-item">No data available.</li>
             {% endfor %}
         </ul>
-    {% else %}
-        <p class="text-muted mt-2">No previous sessions.</p>
+
+        <h2>Department Vote Distribution</h2>
+        <div class="chart-container">
+            <canvas id="departmentPieChart"></canvas>
+        </div>
+    </div>
     {% endif %}
 
-    <div class="chart-container">
-        <h4>Team Vote Distribution</h4>
-        <canvas id="departmentPieChart"></canvas>
+    {% if user.role == "senior_engineer" %}
+    <div class="role-section">
+        <h2>Company‑Wide Summary</h2>
+        <select id="department-dropdown" class="form-select" onchange="filterDepartments()">
+            <option value="all">All Departments</option>
+            {% for dept in company_summary %}
+                <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">
+                    {{ dept.TeamID.DepartmentID.DepartmentName }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <ul id="company-summary-list" class="list-group mt-3">
+            {% for dept in company_summary %}
+                <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
+                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
+                    Team: {{ dept.TeamID.TeamName }},
+                    Total Votes: {{ dept.TotalVotes }}
+                </li>
+            {% empty %}
+                <li class="list-group-item">No data available.</li>
+            {% endfor %}
+        </ul>
+
+        <h2>Company‑Wide Vote Distribution</h2>
+        <div class="chart-container">
+            <canvas id="companyPieChart"></canvas>
+        </div>
     </div>
+    {% endif %}
 </div>
-{% endif %}
 
-{# --- DEPARTMENT LEADER + SENIOR ENGINEER BLOCK --- #}
-{% if user.role == "department_leader" or user.role == "senior_engineer" %}
-<div class="role-section">
-    <h2>Department Summary</h2>
-    <select id="team-dropdown" class="form-select" onchange="filterTeams()">
-        <option value="all">All Teams</option>
-        {% for team in department_summary %}
-            <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
-        {% endfor %}
-    </select>
-
-    <ul id="department-summary-list" class="list-group mt-3">
-        {% for team in department_summary %}
-            <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
-                Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
-            </li>
-        {% empty %}
-            <li class="list-group-item">No data available.</li>
-        {% endfor %}
-    </ul>
-
-    <h2>Department Vote Distribution</h2>
-    <canvas id="departmentPieChart"></canvas>
-</div>
-{% endif %}
-
-{# --- SENIOR ENGINEER ONLY --- #}
-{% if user.role == "senior_engineer" %}
-<div class="role-section">
-    <h2>Company‑Wide Summary</h2>
-    <select id="department-dropdown" class="form-select" onchange="filterDepartments()">
-        <option value="all">All Departments</option>
-        {% for dept in company_summary %}
-            <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">
-                {{ dept.TeamID.DepartmentID.DepartmentName }}
-            </option>
-        {% endfor %}
-    </select>
-
-    <ul id="company-summary-list" class="list-group mt-3">
-        {% for dept in company_summary %}
-            <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}">
-                Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
-                Team: {{ dept.TeamID.TeamName }},
-                Total Votes: {{ dept.TotalVotes }}
-            </li>
-        {% empty %}
-            <li class="list-group-item">No data available.</li>
-        {% endfor %}
-    </ul>
-
-    <h2>Company‑Wide Vote Distribution</h2>
-    <canvas id="companyPieChart"></canvas>
-</div>
-{% endif %}
-
-{# --- SAFE JSON PAYLOADS FOR JAVASCRIPT --- #}
+{# --- SAFE JSON PAYLOADS --- #}
 {% if department_summary %}
     {{ department_summary|json_script:"department-data" }}
 {% else %}
@@ -163,13 +158,16 @@
         return new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: ['red votes', 'yellow votes', 'green votes'],
+                labels: ['Red Votes', 'Yellow Votes', 'Green Votes'],
                 datasets: [{
                     data: [red, yellow, green],
                     backgroundColor: ['#ff4d4d', '#ffe066', '#4caf50']
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
         });
     }
 
