@@ -48,7 +48,7 @@
             </div>
         {% endfor %}
         <div class="text-center">
-            <a href="portal.html" class="btn btn-success btn-lg px-5">Submit Votes</a>
+            <a href="{% url 'portal' session.id %}" class="btn btn-success btn-lg px-5">Submit Votes</a>
         </div>        
     </form>
 </div>

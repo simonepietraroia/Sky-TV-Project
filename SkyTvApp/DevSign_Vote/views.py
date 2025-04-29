@@ -48,7 +48,7 @@ def edit_profile(request):
 
 
 @login_required
-def portal_view(request):
+def portal_view(request, session_id):
     user = request.user
     context = {'user': user}
 
