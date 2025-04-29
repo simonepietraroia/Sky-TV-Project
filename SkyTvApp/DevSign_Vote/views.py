@@ -158,8 +158,8 @@ def dashboard_view(request):
     }
     return render(request, 'DevSign_Vote/dashboard.html', context)
 
-@csrf_exempt
 @login_required
+@csrf_exempt
 def vote_on_session(request, session_id):
     session = Session.objects.get(pk=session_id)
 
@@ -215,6 +215,7 @@ def session_select(request):
         'teams': teams,
     })
 
+@csrf_exempt
 @login_required
 def join_session(request, session_id):
     session = get_object_or_404(Session, pk=session_id)
