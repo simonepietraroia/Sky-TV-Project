@@ -1,11 +1,37 @@
 {% extends 'DevSign_Vote/base.html' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Confirmation{% endblock %}
 
 {% block content %}
-<h1>Thank You for Voting!</h1>
-<p> Thank you once again for voting. Your involvement is greatly appreciated</p>
-<p> Our system is currently finalising the health check results.</p>
-<p>If you have any inquires, please feel free to reach out to us. We are happy to help.</p>
+<div class="container text-center mt-5">
+    <h1 class="mb-4"> Thank you for Voting!</h1>
 
+    <p>Thank you once again for voting. Your involvement is greatly appreciated and plays a crucial role in improving our team's performance.</p>
+
+    <p>We are currently finalising and analysing the health check results you have provided us with.</p>
+
+    <hr class="my-5">
+
+    <h3>What happens Next?</h3>
+    <p>Our team will review and analyse the feedback you have provided us with and share the findings with relevant stakeholders.</p>
+    <p>These valuble insights will help drive improvements in these key areas:</p>
+    <ul class="list-unstyled">
+        <li>Code quality and maintainability</li>
+        <li>Communication and team collaboration</li>
+        <li>Testing and release processes</li>
+        <li>Boosting overall satisfaction and team morale</li>
+    </ul>
+
+    <p class="mt-4">Please keep an eye out for any updates given or shared during team meetings.</p>
+
+    <hr class="my-5">
+
+    <h4>Need Support?</h4>
+    <p>Please reach out if you have any questions or feedback.</p>
+
+    <p>If you have any inquiries, please feel free to reach out to us. We are happy to help.</p>
+
+    <a href="{% url 'home' %}" class ="btn btn-primary btn-ly mt-5">Back to Home</a>
+
+</div>
 {% endblock %}
