@@ -53,7 +53,7 @@ def portal_view(request, session_id):
     context = {'user': user}
 
     if user.role == "team_leader":
-        context['team_sessions'] = Session.objects.filter(UserID=user.UserID)
+        context['team_sessions'] = Session.objects.filter(UserID=user)
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
