@@ -102,6 +102,7 @@ footer {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    background-color: white;
 }
 .content-login {
     flex: 1;
@@ -130,7 +131,7 @@ footer {
     padding: 40px;
 }
 .left-section img {
-    max-width: 100px;
+    max-width: 150px;
     margin-bottom: 20px;
 }
 .right-section {
