@@ -4,17 +4,33 @@
 
 {% block content %}
 <div class="container text-center">
-    <h2>Welcome to DevSign_Vote</h2>
+    <h2 class="mt-4">Welcome to DevSign_Vote</h2>
     <p>Your trusted companion to proactive health tracking.</p>
 
+    <hr class="my-4"
+
+    <h3> About this Platform</h3>
+    <p>DevSign_Vote is an intuitive platform designed to support engineering teams evaluate their overall performance.</p>
+
     <h3>Our Mission</h3>
-    <p>At Sky Engineering, we are committed to continuous improvement and fostering ongoing growth within our engineering teams. The Sky Health Check System enables teams to assess their strengths and identify areas for growth and improvement by using Spotify's squard Health methodology.</p>
+    <p>At Sky Engineering, we are committed to continuous improvement and fostering ongoing growth within our engineering teams. The Sky Health Check System enables teams to assess their strengths and identify areas for growth and improvement by using Spotify's squad Health methodology.</p>
 
     <h3>What is the Health Check System?</h3>
-    <p>The Health Check System provides a structured approach for engineering teams to evaluate key aspects of their workflow, such as code base quality, testing, collaboration and team morale. Using a traffice light voting system - Green indicating strong performance, Amber for areas needing improvement, and Red highlighting significant concerns. This clear and visual representation helps leaders gain valuable insights, make well-informed decisions and faster continuous improvements.</p>
+    <p>The Health Check System provides a structured approach for engineering teams to evaluate key aspects of their workflow.</p>
+    <p>This clear and visual representation helps leaders gain valuable insights, make well-informed decisions and faster continuous improvements.</p>
+
+    <ul class="list-unstyled">
+        <li> Green - Everything is functioning effectively</li>
+        <li> Amber - There are some minor concerns that may require improvement.</li>
+        <li> Red - There are serious issues that require urgent attention.</li>
+    </ul>
+
+    <p>These votes provide us with a clear snapshot of how the team feels about vital topics such as code base quality, testing, collaboration and team morale.</p>
 
     <h3>Our commitment to You</h3>
-    <p>Our goal is provide valuable insights to drive better decison-making and team growth by simplifying team health assessements, Your feedback plays a crucial role in making this platform successful.</p>
+    <p>Our goal is provide valuable insights to drive better decision-making and team growth by simplifying team health assessements, Your feedback plays a crucial role in making this platform successful.</p>
+
+    <hr class="my-4"
     
     <a href= "{% url 'session-select' %}" class="btn btn-primary btn-lg mt-3">Begin to Vote</a>
 </div>
