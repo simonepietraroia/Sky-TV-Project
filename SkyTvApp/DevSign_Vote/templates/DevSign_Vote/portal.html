@@ -4,46 +4,51 @@
 
 {% block content %}
 <style>
-    body{
-        background:#f0f5ff;
-        font-family:'Segoe UI',sans-serif;
-        color:#222;
-        margin:0;
-        padding:0;
+    body {
+        background: #f0f5ff;
+        font-family: 'Segoe UI', sans-serif;
+        color: #222;
+        margin: 0;
+        padding: 0;
     }
-    .container{
-        max-width:900px;
-        margin:0 auto;
-        padding:20px;
+
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
     }
-    .site-header{
-        background:linear-gradient(90deg,#6a11cb,#2575fc);
-        color:#fff;
-        padding:15px 0;
-        text-align:center;
-        font-size:24px;
+
+    .site-header {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: #fff;
+        padding: 15px 0;
+        text-align: center;
+        font-size: 24px;
     }
-    .role-section{
-        background:#fff;
-        border-radius:16px;
-        padding:24px;
-        margin-top:20px;
-        box-shadow:0 8px 20px rgba(0,0,0,.08);
-        color:#222;
+
+    .role-section {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 20px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+        color: #222;
     }
-    .chart-container{
-        text-align:center;
-        margin-top:20px;
+
+    .chart-container {
+        text-align: center;
+        margin-top: 20px;
     }
 </style>
 
 <h1>Welcome, {{ user.get_full_name }}</h1>
 <p>Your role: <strong>{{ user.role }}</strong></p>
 
-{% comment %}team‑leader block{% endcomment %}
+{# --- TEAM LEADER BLOCK --- #}
 {% if user.role == "team_leader" %}
 <div class="role-section">
     <h2>Manage Your Team's Voting Sessions</h2>
+
     <form action="{% url 'create_voting_session' %}" method="post">
         {% csrf_token %}
         <input type="text" name="title" placeholder="Session Title" required>
@@ -51,24 +56,36 @@
     </form>
 
     <h3>Your Team's Voting Sessions</h3>
-    <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
-        <option value="all">All Sessions</option>
-        {% for session in team_sessions %}
-            <option value="{{ session.id }}">{{ session.title }}</option>
-        {% endfor %}
-    </select>
 
-    <ul id="team-sessions-list" class="list-group mt-3">
-        {% for session in team_sessions %}
-            <li class="list-group-item" data-session-id="{{ session.id }}">{{ session.title }} – {{ session.created_at }}</li>
-        {% empty %}
-            <li class="list-group-item">No previous sessions.</li>
-        {% endfor %}
-    </ul>
+    {% if team_sessions %}
+        <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
+            <option value="all">All Sessions</option>
+            {% for session in team_sessions %}
+                <option value="{{ session.SessionID }}">{{ session.session_name }}</option>
+            {% endfor %}
+        </select>
+
+        <ul id="team-sessions-list" class="list-group mt-3">
+            {% for session in team_sessions %}
+                <li class="list-group-item" data-session-id="{{ session.SessionID }}">
+                    <strong>{{ session.session_name }}</strong> –
+                    {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} –
+                    Status: {{ session.Status }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted mt-2">No previous sessions.</p>
+    {% endif %}
+
+    <div class="chart-container">
+        <h4>Team Vote Distribution</h4>
+        <canvas id="departmentPieChart"></canvas>
+    </div>
 </div>
 {% endif %}
 
-{% comment %}department‑leader (and senior‑engineer) block{% endcomment %}
+{# --- DEPARTMENT LEADER + SENIOR ENGINEER BLOCK --- #}
 {% if user.role == "department_leader" or user.role == "senior_engineer" %}
 <div class="role-section">
     <h2>Department Summary</h2>
@@ -94,7 +111,7 @@
 </div>
 {% endif %}
 
-{% comment %}senior‑engineer block{% endcomment %}
+{# --- SENIOR ENGINEER ONLY --- #}
 {% if user.role == "senior_engineer" %}
 <div class="role-section">
     <h2>Company‑Wide Summary</h2>
@@ -124,7 +141,7 @@
 </div>
 {% endif %}
 
-{# safe json payloads for javascript #}
+{# --- SAFE JSON PAYLOADS FOR JAVASCRIPT --- #}
 {% if department_summary %}
     {{ department_summary|json_script:"department-data" }}
 {% else %}
@@ -139,60 +156,51 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    /* parse the json that was embedded by django */
     const departmentVotes = JSON.parse(document.getElementById('department-data').textContent);
-    const companyVotes    = JSON.parse(document.getElementById('company-data').textContent);
+    const companyVotes = JSON.parse(document.getElementById('company-data').textContent);
 
-    /* helper to build a traffic‑light pie chart */
-    function buildPie(ctx, red, yellow, green){
-        return new Chart(ctx,{
-            type:'pie',
-            data:{
-                labels:['red votes','yellow votes','green votes'],
-                datasets:[{
-                    data:[red,yellow,green],
-                    backgroundColor:['#ff4d4d','#ffe066','#4caf50']
+    function buildPie(ctx, red, yellow, green) {
+        return new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['red votes', 'yellow votes', 'green votes'],
+                datasets: [{
+                    data: [red, yellow, green],
+                    backgroundColor: ['#ff4d4d', '#ffe066', '#4caf50']
                 }]
             },
-            options:{responsive:true,maintainAspectRatio:false}
+            options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    /* department chart (first entry of query result, or zeros) */
-    if(document.getElementById('departmentPieChart')){
-        const d = departmentVotes.length ? departmentVotes[0] : {RedVotes:0,YellowVotes:0,GreenVotes:0};
-        buildPie(
-            document.getElementById('departmentPieChart').getContext('2d'),
-            d.RedVotes, d.YellowVotes, d.GreenVotes
-        );
+    if (document.getElementById('departmentPieChart')) {
+        const d = departmentVotes.length ? departmentVotes[0] : { RedVotes: 0, YellowVotes: 0, GreenVotes: 0 };
+        buildPie(document.getElementById('departmentPieChart').getContext('2d'), d.RedVotes, d.YellowVotes, d.GreenVotes);
     }
 
-    /* company‑wide chart (first entry of query result, or zeros) */
-    if(document.getElementById('companyPieChart')){
-        const c = companyVotes.length ? companyVotes[0] : {RedVotes:0,YellowVotes:0,GreenVotes:0};
-        buildPie(
-            document.getElementById('companyPieChart').getContext('2d'),
-            c.RedVotes, c.YellowVotes, c.GreenVotes
-        );
+    if (document.getElementById('companyPieChart')) {
+        const c = companyVotes.length ? companyVotes[0] : { RedVotes: 0, YellowVotes: 0, GreenVotes: 0 };
+        buildPie(document.getElementById('companyPieChart').getContext('2d'), c.RedVotes, c.YellowVotes, c.GreenVotes);
     }
 
-    /* filtering helpers */
-    function filterSessions(){
-        const selected=document.getElementById('team-session-dropdown').value;
-        document.querySelectorAll('#team-sessions-list li').forEach(li=>{
-            li.style.display=(selected==='all'||li.dataset.sessionId===selected)?'block':'none';
+    function filterSessions() {
+        const selected = document.getElementById('team-session-dropdown').value;
+        document.querySelectorAll('#team-sessions-list li').forEach(li => {
+            li.style.display = (selected === 'all' || li.dataset.sessionId === selected) ? 'block' : 'none';
         });
     }
-    function filterTeams(){
-        const selected=document.getElementById('team-dropdown').value;
-        document.querySelectorAll('#department-summary-list li').forEach(li=>{
-            li.style.display=(selected==='all'||li.dataset.team===selected)?'block':'none';
+
+    function filterTeams() {
+        const selected = document.getElementById('team-dropdown').value;
+        document.querySelectorAll('#department-summary-list li').forEach(li => {
+            li.style.display = (selected === 'all' || li.dataset.team === selected) ? 'block' : 'none';
         });
     }
-    function filterDepartments(){
-        const selected=document.getElementById('department-dropdown').value;
-        document.querySelectorAll('#company-summary-list li').forEach(li=>{
-            li.style.display=(selected==='all'||li.dataset.department===selected)?'block':'none';
+
+    function filterDepartments() {
+        const selected = document.getElementById('department-dropdown').value;
+        document.querySelectorAll('#company-summary-list li').forEach(li => {
+            li.style.display = (selected === 'all' || li.dataset.department === selected) ? 'block' : 'none';
         });
     }
 </script>
