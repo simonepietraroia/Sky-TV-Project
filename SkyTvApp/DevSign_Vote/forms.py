@@ -23,15 +23,17 @@ class EmailAuthenticationForm(AuthenticationForm):
 class VotingSessionForm(forms.ModelForm):
     class Meta:
         model = Session
-        fields = ['session_name', 'StartTime', 'EndTime', 'health_cards']
+        fields = ['session_name', 'StartTime', 'EndTime', 'health_cards', 'DepartmentID', 'TeamID']
 
         widgets = {
             'session_name': forms.TextInput(attrs={'class': 'form-control'}),
             'StartTime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'EndTime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'health_cards': forms.CheckboxSelectMultiple()
+            'health_cards': forms.CheckboxSelectMultiple(),
+            'DepartmentID': forms.Select(attrs={'class': 'form-control'}),
+            'TeamID': forms.Select(attrs={'class': 'form-control'}),
         }
-        
+
 class VoteForm(forms.ModelForm):
     VOTE_CHOICES = [
         (1, '🔴 Red'), (2, '🟡 Yellow'), (3, '🟢 Green')

@@ -16,10 +16,6 @@
     <h3>Our commitment to You</h3>
     <p>Our goal is provide valuable insights to drive better decison-making and team growth by simplifying team health assessements, Your feedback plays a crucial role in making this platform successful.</p>
     
-    {% if user.is_authenticated %}
-    <a href="#" class="btn btn-primary btn-lg mt-3">Begin to Vote</a>
-    {% else %}
-    <p>Please log in with an engineer account to proceed as only engineers are authorised to begin the health check process.</p>
-    {% endif %}
+    <a href= "{% url 'session-select' %}" class="btn btn-primary btn-lg mt-3">Begin to Vote</a>
 </div>
 {% endblock %}

@@ -193,11 +193,9 @@ def vote_on_session(request, session_id):
         "cards": health_cards
     })
 
-@login_required
+@login_required(login_url='login')  
 def session_select(request):
-    from django.utils import timezone
     now = timezone.now()
-
     sessions = Session.objects.filter(Status="Open", EndTime__gt=now)
 
     return render(request, 'DevSign_Vote/session-select.html', {

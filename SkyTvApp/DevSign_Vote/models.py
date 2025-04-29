@@ -73,16 +73,13 @@ class Session(models.Model):
     EndTime = models.DateTimeField()
     Status = models.CharField(max_length=50, default="Open")
     DateCreated = models.DateTimeField(auto_now_add=True)
-
     health_cards = models.ManyToManyField('DevSign_Vote.HealthCard', blank=True, related_name='sessions')
+
+    DepartmentID = models.ForeignKey('DevSign_Vote.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name="sessions")
+    TeamID = models.ForeignKey('DevSign_Vote.Team', on_delete=models.SET_NULL, null=True, blank=True, related_name="sessions")
 
     def __str__(self):
         return f"{self.session_name} ({self.Status})"
-
-    def is_active(self):
-        """Check if the session is still active based on EndTime"""
-        from django.utils import timezone
-        return self.EndTime > timezone.now() and self.Status == "Open"
 
 
 class HealthCard(models.Model):
