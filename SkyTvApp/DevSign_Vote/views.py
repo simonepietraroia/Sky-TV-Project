@@ -12,7 +12,6 @@ from .models import Session, HealthCard, Department, Team, Vote
 
 import base64
 
-
 def homepage(request):
     return render(request, 'DevSign_Vote/home.html')
 
@@ -56,35 +55,37 @@ def edit_profile(request):
         'teams': teams,
     })
 
+
 @login_required
 def portal_view(request, session_id=None):
     user = request.user
     context = {'user': user}
 
+    def calculate_section_trends(votes_queryset):
+        trends = defaultdict(str)
+        for vote in votes_queryset:
+            if vote.CardID and vote.Progress:
+                trends[vote.CardID.Description] = vote.Progress
+        return trends
+
     if user.role == "team_leader":
         sessions = Session.objects.filter(UserID=user).order_by('-StartTime')
         context['team_sessions'] = sessions
 
-        team_session_data = []
-        for session in sessions:
-            counts = Vote.objects.filter(SessionID=session).aggregate(
-                red=Count('VoteID', filter=Q(VoteValue=1)),
-                yellow=Count('VoteID', filter=Q(VoteValue=2)),
-                green=Count('VoteID', filter=Q(VoteValue=3))
+        latest_session = sessions.first()
+        if latest_session:
+            vote_counts = Vote.objects.filter(SessionID=latest_session).aggregate(
+                RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
+                YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
+                GreenVotes=Count('VoteID', filter=Q(VoteValue=3)),
             )
+            context['vote_data'] = vote_counts
 
-            team_session_data.append({
-                "id": session.SessionID,
-                "name": session.session_name,
-                "start": session.StartTime.strftime("%Y-%m-%d %H:%M"),
-                "end": session.EndTime.strftime("%Y-%m-%d %H:%M"),
-                "status": session.Status,
-                "red": counts["red"],
-                "yellow": counts["yellow"],
-                "green": counts["green"]
-            })
-
-        context["team_session_data"] = team_session_data
+            section_votes = Vote.objects.filter(SessionID=latest_session)
+            context['section_trends'] = calculate_section_trends(section_votes)
+        else:
+            context['vote_data'] = {"RedVotes": 0, "YellowVotes": 0, "GreenVotes": 0}
+            context['section_trends'] = {}
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
@@ -94,15 +95,17 @@ def portal_view(request, session_id=None):
             votes = Vote.objects.filter(TeamID=team)
             if votes.exists():
                 aggregated = votes.aggregate(
-                    red=Count('VoteID', filter=Q(VoteValue=1)),
-                    yellow=Count('VoteID', filter=Q(VoteValue=2)),
-                    green=Count('VoteID', filter=Q(VoteValue=3))
+                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
+                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
+                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
                 )
                 aggregated['TeamID'] = team
-                aggregated['TotalVotes'] = sum(aggregated.values())
+                aggregated['TotalVotes'] = sum([aggregated['RedVotes'], aggregated['YellowVotes'], aggregated['GreenVotes']])
                 vote_data.append(aggregated)
 
         context['department_summary'] = vote_data
+        section_votes = Vote.objects.filter(TeamID__in=teams)
+        context['section_trends'] = calculate_section_trends(section_votes)
 
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
@@ -112,17 +115,19 @@ def portal_view(request, session_id=None):
             votes = Vote.objects.filter(TeamID__DepartmentID=dept)
             if votes.exists():
                 aggregated = votes.aggregate(
-                    red=Count('VoteID', filter=Q(VoteValue=1)),
-                    yellow=Count('VoteID', filter=Q(VoteValue=2)),
-                    green=Count('VoteID', filter=Q(VoteValue=3))
+                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
+                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
+                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
                 )
                 team = Team.objects.filter(DepartmentID=dept).first()
                 aggregated['TeamID'] = team
                 aggregated['TeamID'].DepartmentID = dept
-                aggregated['TotalVotes'] = sum(aggregated.values())
+                aggregated['TotalVotes'] = sum([aggregated['RedVotes'], aggregated['YellowVotes'], aggregated['GreenVotes']])
                 vote_data.append(aggregated)
 
         context['company_summary'] = vote_data
+        section_votes = Vote.objects.all()
+        context['section_trends'] = calculate_section_trends(section_votes)
 
     return render(request, 'DevSign_Vote/portal.html', context)
 
@@ -173,12 +178,11 @@ def user_logout(request):
 @login_required
 @csrf_exempt
 def vote_on_session(request, session_id):
-    session = Session.objects.get(pk=session_id)
+    session = get_object_or_404(Session, pk=session_id)
 
     if session.Status == "Closed" or session.EndTime < timezone.now():
         messages.error(request, "This session is closed.")
         return redirect("portal", session_id=session.SessionID)
-
 
     health_cards = HealthCard.objects.all()
 
@@ -210,6 +214,7 @@ def vote_on_session(request, session_id):
         "session": session,
         "cards": health_cards
     })
+
 
 @login_required(login_url='login')
 def session_select(request):
@@ -264,11 +269,11 @@ def join_session(request, session_id):
         messages.success(request, "Your votes have been submitted successfully!")
         return redirect("portal", session_id=session.SessionID)
 
-
     return render(request, 'DevSign_Vote/voting.html', {
         'session': session,
         'cards': cards,
     })
+
 
 @login_required
 @csrf_exempt
@@ -292,6 +297,7 @@ def create_voting_session(request):
         form = VotingSessionForm()
 
     return render(request, 'DevSign_Vote/create_session.html', {'form': form})
+
 
 @login_required
 @csrf_exempt
