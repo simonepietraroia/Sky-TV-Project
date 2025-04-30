@@ -276,11 +276,10 @@ def portal_view(request):
             context["section_trends"] = {}
 
     elif user.role == "department_leader":
-        if user.TeamID and user.TeamID.DepartmentID:
-            teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
-        else:
-            teams = Team.objects.none()
+        department = user.TeamID.DepartmentID if user.TeamID and user.TeamID.DepartmentID else None
+        teams = Team.objects.filter(DepartmentID=department) if department else Team.objects.none()
         context['teams'] = teams
+        context['departments'] = Department.objects.all()
 
         selected_team = request.GET.get("team")
         selected_session = request.GET.get("session")
@@ -293,22 +292,25 @@ def portal_view(request):
         context["sessions"] = sessions
 
         votes = Vote.objects.filter(TeamID__in=teams)
-        context["department_summary"] = [
-            {
+        summary = []
+        for team in teams:
+            team_sessions = Session.objects.filter(TeamID=team).order_by('-StartTime')
+            team_votes = Vote.objects.filter(TeamID=team)
+            summary.append({
                 "TeamName": team.Name,
-                "Sessions": Session.objects.filter(TeamID=team).order_by('-StartTime'),
-                **Vote.objects.filter(TeamID=team).aggregate(
-                    RedVotes=Count("VoteID", filter=Q(VoteValue=1)) or 0,
-                    YellowVotes=Count("VoteID", filter=Q(VoteValue=2)) or 0,
-                    GreenVotes=Count("VoteID", filter=Q(VoteValue=3)) or 0
-                )
-            }
-            for team in teams
-        ]
+                "Sessions": team_sessions,
+                "RedVotes": team_votes.filter(VoteValue=1).count(),
+                "YellowVotes": team_votes.filter(VoteValue=2).count(),
+                "GreenVotes": team_votes.filter(VoteValue=3).count()
+            })
+
+        context["department_summary"] = summary
         context["section_trends"] = calculate_trends(votes)
 
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
+        context["departments"] = departments
+
         selected_dept = request.GET.get("department")
         selected_team = request.GET.get("team")
         selected_session = request.GET.get("session")
@@ -334,7 +336,7 @@ def portal_view(request):
                     "Sessions": team_sessions,
                     "RedVotes": team_votes.filter(VoteValue=1).count(),
                     "YellowVotes": team_votes.filter(VoteValue=2).count(),
-                    "GreenVotes": team_votes.filter(VoteValue=3).count(),
+                    "GreenVotes": team_votes.filter(VoteValue=3).count()
                 })
 
             vote_data.append({
@@ -342,7 +344,6 @@ def portal_view(request):
                 "Teams": team_data
             })
 
-        context["departments"] = departments
         context["company_summary"] = vote_data
         context["section_trends"] = calculate_trends(Vote.objects.all())
 
