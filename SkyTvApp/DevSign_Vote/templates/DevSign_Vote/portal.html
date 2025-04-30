@@ -76,28 +76,26 @@
             <p class="text-muted">No previous sessions.</p>
         {% endif %}
 
-        <div class="chart-container" id="departmentChartContainer">
+        <div class="chart-container">
             <div class="filter-side">
-                <h5>Vote Topics</h5>
-                <ul class="list-group">
+                <h5>Vote Topics & Trends</h5>
+                <ul class="list-group" id="trend-list">
                     {% for card in health_cards %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ card.Description }}
-                            {% with trend=section_trends|get_item:card.Description %}
-                                {% if trend == "up" %}
-                                    <span class="badge bg-success rounded-pill">⬆️</span>
-                                {% elif trend == "down" %}
-                                    <span class="badge bg-danger rounded-pill">⬇️</span>
-                                {% else %}
-                                    <span class="badge bg-secondary rounded-pill">–</span>
-                                {% endif %}
-                            {% endwith %}
-                        </li>
+                        {% with trend=section_trends|get_item:card.Description %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center trend-item"
+                                data-card="{{ card.Description }}">
+                                {{ card.Description }}
+                                <span class="badge 
+                                    {% if trend == "up" %}bg-success{% elif trend == "down" %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
+                                    {% if trend == "up" %}⬆️{% elif trend == "down" %}⬇️{% else %}–{% endif %}
+                                </span>
+                            </li>
+                        {% endwith %}
                     {% endfor %}
                 </ul>
             </div>
             <div class="chart-side">
-                <canvas id="departmentPieChart"></canvas>
+                <canvas id="trendPieChart"></canvas>
             </div>
         </div>
     </div>
@@ -106,40 +104,15 @@
     {% if user.role == "department_leader" %}
     <div class="role-section">
         <h2>Department Summary</h2>
-        <select id="team-dropdown" class="form-select" onchange="filterTeams()">
-            <option value="all">All Teams</option>
+        <ul class="list-group mt-3">
             {% for team in department_summary %}
-                <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
-            {% endfor %}
-        </select>
-        <ul id="department-summary-list" class="list-group mt-3">
-            {% for team in department_summary %}
-                <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
+                <li class="list-group-item">
                     Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
                 </li>
             {% endfor %}
         </ul>
 
-        <div class="chart-container" id="departmentChartContainer">
-            <div class="filter-side">
-                <h5>Vote Topics</h5>
-                <ul class="list-group">
-                    {% for card in health_cards %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ card.Description }}
-                            {% with trend=section_trends|get_item:card.Description %}
-                                {% if trend == "up" %}
-                                    <span class="badge bg-success rounded-pill">⬆️</span>
-                                {% elif trend == "down" %}
-                                    <span class="badge bg-danger rounded-pill">⬇️</span>
-                                {% else %}
-                                    <span class="badge bg-secondary rounded-pill">–</span>
-                                {% endif %}
-                            {% endwith %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div class="chart-container">
             <div class="chart-side">
                 <canvas id="departmentPieChart"></canvas>
             </div>
@@ -150,48 +123,17 @@
     {% if user.role == "senior_engineer" %}
     <div class="role-section">
         <h2>Company‑Wide Summary</h2>
-        <select id="department-dropdown" class="form-select mb-3" onchange="filterDepartments()">
-            <option value="all">All Departments</option>
+        <ul class="list-group mt-3">
             {% for dept in company_summary %}
-                <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">{{ dept.TeamID.DepartmentID.DepartmentName }}</option>
-            {% endfor %}
-        </select>
-        <select id="team-dropdown" class="form-select" onchange="filterTeams()">
-            <option value="all">All Teams</option>
-            {% for team in company_summary %}
-                <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
-            {% endfor %}
-        </select>
-        <ul id="company-summary-list" class="list-group mt-3">
-            {% for dept in company_summary %}
-                <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}" data-team="{{ dept.TeamID.TeamName }}">
-                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
-                    Team: {{ dept.TeamID.TeamName }},
+                <li class="list-group-item">
+                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }}, 
+                    Team: {{ dept.TeamID.TeamName }}, 
                     Total Votes: {{ dept.TotalVotes }}
                 </li>
             {% endfor %}
         </ul>
 
-        <div class="chart-container" id="companyChartContainer">
-            <div class="filter-side">
-                <h5>Vote Topics</h5>
-                <ul class="list-group">
-                    {% for card in health_cards %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ card.Description }}
-                            {% with trend=section_trends|get_item:card.Description %}
-                                {% if trend == "up" %}
-                                    <span class="badge bg-success rounded-pill">⬆️</span>
-                                {% elif trend == "down" %}
-                                    <span class="badge bg-danger rounded-pill">⬇️</span>
-                                {% else %}
-                                    <span class="badge bg-secondary rounded-pill">–</span>
-                                {% endif %}
-                            {% endwith %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div class="chart-container">
             <div class="chart-side">
                 <canvas id="companyPieChart"></canvas>
             </div>
@@ -199,6 +141,7 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
 
 {% if department_summary %}
     {{ department_summary|json_script:"department-data" }}
@@ -245,26 +188,4 @@
         const c = companyVotes.length ? companyVotes[0] : { RedVotes: 0, YellowVotes: 0, GreenVotes: 0 };
         buildPie(document.getElementById('companyPieChart').getContext('2d'), c.RedVotes, c.YellowVotes, c.GreenVotes, 'companyChartContainer');
     }
-
-    function filterSessions() {
-        const selected = document.getElementById('team-session-dropdown').value;
-        document.querySelectorAll('#team-sessions-list li').forEach(li => {
-            li.style.display = (selected === 'all' || li.dataset.sessionId === selected) ? 'block' : 'none';
-        });
-    }
-
-    function filterTeams() {
-        const selected = document.getElementById('team-dropdown').value;
-        document.querySelectorAll('[data-team]').forEach(li => {
-            li.style.display = (selected === 'all' || li.dataset.team === selected) ? 'block' : 'none';
-        });
-    }
-
-    function filterDepartments() {
-        const selected = document.getElementById('department-dropdown').value;
-        document.querySelectorAll('[data-department]').forEach(li => {
-            li.style.display = (selected === 'all' || li.dataset.department === selected) ? 'block' : 'none';
-        });
-    }
 </script>
-{% endblock %}
