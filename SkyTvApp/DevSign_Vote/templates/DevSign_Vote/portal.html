@@ -57,6 +57,7 @@
 
             <div class="chart-container">
                 <canvas id="trendPieChart" width="400" height="400"></canvas>
+                <p class="no-data" id="noDataMsg" style="display:none;">No vote data available.</p>
             </div>
         {% else %}
             <p class="text-muted">No previous sessions.</p>
@@ -120,10 +121,21 @@
 
     function buildPie(ctx, red, yellow, green) {
         const total = red + yellow + green;
+
+        // handle no data
+        const noDataMsg = document.getElementById("noDataMsg");
         if (total === 0) {
-            ctx.canvas.parentNode.innerHTML = "<p class='no-data'>No vote data available.</p>";
-            return null;
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+            ctx.canvas.style.display = "none";
+            noDataMsg.style.display = "block";
+            return;
         }
+
+        noDataMsg.style.display = "none";
+        ctx.canvas.style.display = "block";
 
         return new Chart(ctx, {
             type: 'pie',
@@ -152,30 +164,36 @@
             ${session.start} to ${session.end} — <em>Status:</em> ${session.status}
         `;
 
-        const ctx = document.getElementById("trendPieChart").getContext("2d");
+        const canvas = document.getElementById("trendPieChart");
+        const ctx = canvas.getContext("2d");
+
         if (chartInstance) {
             chartInstance.destroy();
+            chartInstance = null;
         }
+
         chartInstance = buildPie(ctx, session.red, session.yellow, session.green);
     }
 
     function initializePieCharts() {
-        if (document.getElementById("departmentPieChart")) {
+        const deptCanvas = document.getElementById("departmentPieChart");
+        if (deptCanvas) {
             const dData = JSON.parse(document.getElementById("department-data").textContent);
             const d = dData.length ? dData[0] : { red: 0, yellow: 0, green: 0 };
-            buildPie(document.getElementById("departmentPieChart").getContext("2d"), d.red, d.yellow, d.green);
+            buildPie(deptCanvas.getContext("2d"), d.red, d.yellow, d.green);
         }
 
-        if (document.getElementById("companyPieChart")) {
+        const companyCanvas = document.getElementById("companyPieChart");
+        if (companyCanvas) {
             const cData = JSON.parse(document.getElementById("company-data").textContent);
             const c = cData.length ? cData[0] : { red: 0, yellow: 0, green: 0 };
-            buildPie(document.getElementById("companyPieChart").getContext("2d"), c.red, c.yellow, c.green);
+            buildPie(companyCanvas.getContext("2d"), c.red, c.yellow, c.green);
         }
     }
 
     document.addEventListener("DOMContentLoaded", function () {
         if (document.getElementById("sessionDropdown")) {
-            renderSessionData();  // render first session
+            renderSessionData();
         }
         initializePieCharts();
     });
