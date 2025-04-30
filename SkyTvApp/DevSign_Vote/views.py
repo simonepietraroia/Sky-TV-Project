@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from collections import defaultdict
 from django.db.models import Count, Q
 
 from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm, VotingSessionForm
@@ -61,6 +62,13 @@ def portal_view(request, session_id=None):
     user = request.user
     context = {'user': user}
 
+    def calculate_section_trends(votes_queryset):
+        trends = defaultdict(str)
+        for vote in votes_queryset:
+            if vote.CardID and vote.Progress:
+                trends[vote.CardID.Description] = vote.Progress
+        return trends
+
     if user.role == "team_leader":
         sessions = Session.objects.filter(UserID=user)
         context['team_sessions'] = sessions
@@ -74,8 +82,12 @@ def portal_view(request, session_id=None):
             )
             vote_counts['TotalVotes'] = sum(vote_counts.values())
             context['department_summary'] = [vote_counts]
+
+            section_votes = Vote.objects.filter(SessionID=latest_session)
+            context['section_trends'] = calculate_section_trends(section_votes)
         else:
             context['department_summary'] = []
+            context['section_trends'] = {}
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
@@ -94,6 +106,8 @@ def portal_view(request, session_id=None):
                 vote_data.append(aggregated)
 
         context['department_summary'] = vote_data
+        section_votes = Vote.objects.filter(TeamID__in=teams)
+        context['section_trends'] = calculate_section_trends(section_votes)
 
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
@@ -114,9 +128,10 @@ def portal_view(request, session_id=None):
                 vote_data.append(aggregated)
 
         context['company_summary'] = vote_data
+        section_votes = Vote.objects.all()
+        context['section_trends'] = calculate_section_trends(section_votes)
 
     return render(request, 'DevSign_Vote/portal.html', context)
-
 
 @csrf_exempt
 def signup(request):
