@@ -352,17 +352,28 @@ footer {
 
 .signup-form-group {
     margin-bottom: 15px;
-}
-
-.signup-form-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
 }
 
 .signup-form-group label {
     font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.signup-form-group input,
+.signup-form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.signup-form-group small {
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
 }
 
 .signup-btn {
@@ -380,6 +391,7 @@ footer {
 .signup-btn:hover {
     background: linear-gradient(to right, #005A9C, #2A6AD0);
 }
+
 
 /* buttons on home and confirmation pages */
 .my-custom-btn {
