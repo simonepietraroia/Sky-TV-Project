@@ -58,7 +58,6 @@ def edit_profile(request):
 
 @login_required
 def portal_view(request, session_id=None):
-    from collections import defaultdict
     user = request.user
     context = {'user': user}
 
@@ -76,30 +75,22 @@ def portal_view(request, session_id=None):
         latest_session = sessions.first()
         if latest_session:
             vote_counts = Vote.objects.filter(SessionID=latest_session).aggregate(
-                RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
-                YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
-                GreenVotes=Count('VoteID', filter=Q(VoteValue=3)),
+                RedVotes=Count('VoteID', filter=Q(VoteValue=1)) or 0,
+                YellowVotes=Count('VoteID', filter=Q(VoteValue=2)) or 0,
+                GreenVotes=Count('VoteID', filter=Q(VoteValue=3)) or 0,
             )
 
-            # ensure no None values
             vote_counts['RedVotes'] = vote_counts['RedVotes'] or 0
             vote_counts['YellowVotes'] = vote_counts['YellowVotes'] or 0
             vote_counts['GreenVotes'] = vote_counts['GreenVotes'] or 0
 
             vote_counts['TotalVotes'] = vote_counts['RedVotes'] + vote_counts['YellowVotes'] + vote_counts['GreenVotes']
-
-            # Needed for JS to access chart data
             context['department_summary'] = [vote_counts]
 
             section_votes = Vote.objects.filter(SessionID=latest_session)
             context['section_trends'] = calculate_section_trends(section_votes)
         else:
-            context['department_summary'] = [{
-                "RedVotes": 0,
-                "YellowVotes": 0,
-                "GreenVotes": 0,
-                "TotalVotes": 0
-            }]
+            context['department_summary'] = [{"RedVotes": 0, "YellowVotes": 0, "GreenVotes": 0, "TotalVotes": 0}]
             context['section_trends'] = {}
 
     elif user.role == "department_leader":
@@ -110,14 +101,13 @@ def portal_view(request, session_id=None):
             votes = Vote.objects.filter(TeamID=team)
             if votes.exists():
                 aggregated = votes.aggregate(
-                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
-                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
-                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
+                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)) or 0,
+                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)) or 0,
+                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3)) or 0
                 )
                 aggregated['RedVotes'] = aggregated['RedVotes'] or 0
                 aggregated['YellowVotes'] = aggregated['YellowVotes'] or 0
                 aggregated['GreenVotes'] = aggregated['GreenVotes'] or 0
-
                 aggregated['TeamID'] = team
                 aggregated['TotalVotes'] = aggregated['RedVotes'] + aggregated['YellowVotes'] + aggregated['GreenVotes']
                 vote_data.append(aggregated)
@@ -134,14 +124,13 @@ def portal_view(request, session_id=None):
             votes = Vote.objects.filter(TeamID__DepartmentID=dept)
             if votes.exists():
                 aggregated = votes.aggregate(
-                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
-                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
-                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
+                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)) or 0,
+                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)) or 0,
+                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3)) or 0
                 )
                 aggregated['RedVotes'] = aggregated['RedVotes'] or 0
                 aggregated['YellowVotes'] = aggregated['YellowVotes'] or 0
                 aggregated['GreenVotes'] = aggregated['GreenVotes'] or 0
-
                 team = Team.objects.filter(DepartmentID=dept).first()
                 aggregated['TeamID'] = team
                 aggregated['TeamID'].DepartmentID = dept
@@ -153,6 +142,7 @@ def portal_view(request, session_id=None):
         context['section_trends'] = calculate_section_trends(section_votes)
 
     return render(request, 'DevSign_Vote/portal.html', context)
+
 
 @csrf_exempt
 def signup(request):
@@ -226,11 +216,7 @@ def vote_on_session(request, session_id):
                 )
 
         messages.success(request, "Your votes have been submitted.")
-
-        if request.user.role == "engineer":
-            return redirect("confirmation")
-        else:
-            return redirect("portal", session_id=session.SessionID)
+        return redirect("confirmation", session_id=session.SessionID)
 
     return render(request, "DevSign_Vote/vote_session.html", {
         "session": session,
@@ -289,7 +275,7 @@ def join_session(request, session_id):
                 )
 
         messages.success(request, "Your votes have been submitted successfully!")
-        return redirect("portal", session_id=session.SessionID)
+        return redirect("confirmation", session_id=session.SessionID)
 
     return render(request, 'DevSign_Vote/voting.html', {
         'session': session,
@@ -325,4 +311,4 @@ def create_voting_session(request):
 @csrf_exempt
 def confirmation_view(request, session_id): 
     session = get_object_or_404(Session, pk=session_id)
-    return render(request, 'DevSign_Vote/confirmation.html', {'session':session})
+    return render(request, 'DevSign_Vote/confirmation.html', {'session': session})
