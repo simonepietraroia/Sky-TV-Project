@@ -6,9 +6,10 @@
 {% block content %}
 <div class="container mt-5">
   <h2 class="text-center mb-4">Choose Your Health‑Check Session</h2>
+
   <form method="get" class="mb-4">
-    <div class="row">
-      <div class="col-md-5">
+    <div class="row align-items-end">
+      <div class="col-md-4">
         <select name="department" class="form-select" id="departmentSelect">
           <option value="">Select Department</option>
           {% for department in departments %}
@@ -18,8 +19,8 @@
           {% endfor %}
         </select>
       </div>
-  
-      <div class="col-md-5">
+
+      <div class="col-md-4">
         <select name="team" class="form-select" id="teamSelect">
           <option value="">Select Team</option>
           {% for team in teams %}
@@ -29,13 +30,19 @@
           {% endfor %}
         </select>
       </div>
-  
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Filter</button>
+
+      <div class="col-md-2 d-grid">
+        <button type="submit" class="btn btn-primary">Filter</button>
       </div>
+
+      {% if user.role == "team_leader" %}
+      <div class="col-md-2 d-grid">
+        <a href="{% url 'create_session' %}" class="btn btn-primary">Create New Session</a>
+      </div>
+      {% endif %}
     </div>
   </form>
-  <!-- SESSIONS GRID -->
+
   <div id="sessionsContainer" class="row row-cols-1 row-cols-md-2 g-4">
     {% for session in sessions %}
       <div class="col">
