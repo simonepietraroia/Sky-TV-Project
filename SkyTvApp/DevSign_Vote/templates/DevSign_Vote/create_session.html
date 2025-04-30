@@ -1,35 +1,57 @@
 {% extends 'DevSign_Vote/base.html' %}
-{% block title %}Create Session{% endblock %}
+{% block title %}Create Voting Session{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2>Create a New Voting Session</h2>
+<div class="container mt-5 mb-5" style="max-width: 700px;">
+    <h2 class="mb-4">Create a New Voting Session</h2>
     <form method="post">
         {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
         <div class="mb-3">
             {{ form.session_name.label_tag }}
             {{ form.session_name }}
         </div>
+
         <div class="mb-3">
             {{ form.StartTime.label_tag }}
             {{ form.StartTime }}
         </div>
+
         <div class="mb-3">
             {{ form.EndTime.label_tag }}
             {{ form.EndTime }}
         </div>
+
         <div class="mb-3">
-          {{ form.DepartmentID.label_tag }}
-          {{ form.DepartmentID }}
+            {{ form.DepartmentID.label_tag }}
+            {{ form.DepartmentID }}
         </div>
+
         <div class="mb-3">
-          {{ form.TeamID.label_tag }}
-          {{ form.TeamID }}
+            {{ form.TeamID.label_tag }}
+            {{ form.TeamID }}
         </div>
+
         <div class="mb-3">
-            <label>Select Health Cards:</label>
+            <label for="id_health_cards" class="form-label">Select Health Cards:</label>
             {{ form.health_cards }}
         </div>
+
         <button type="submit" class="btn btn-primary">Create Session</button>
     </form>
 </div>

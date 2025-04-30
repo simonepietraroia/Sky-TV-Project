@@ -11,7 +11,7 @@
         color: #222;
     }
     .container {
-        max-width: 900px;
+        max-width: 1000px;
         margin: 0 auto;
         padding: 20px;
     }
@@ -22,16 +22,20 @@
         margin-top: 20px;
         box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
     }
+    .filter-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
     .chart-container {
-        margin-top: 20px;
-        padding: 16px;
+        padding: 20px;
         background: #f8f9fa;
         border-radius: 12px;
         min-height: 400px;
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-direction: column;
     }
     .no-data {
         color: #777;
@@ -56,11 +60,10 @@
                 {% endfor %}
             </ul>
         {% else %}
-            <p class="text-muted">No previous sessions.</p>
+            <p class="text-muted">No sessions available.</p>
         {% endif %}
 
         <div class="chart-container" id="departmentChartContainer">
-            <h4>Team Vote Distribution</h4>
             <canvas id="departmentPieChart"></canvas>
         </div>
     </div>
@@ -69,21 +72,22 @@
     {% if user.role == "department_leader" %}
     <div class="role-section">
         <h2>Department Summary</h2>
-        <select id="team-dropdown" class="form-select" onchange="filterTeams()">
-            <option value="all">All Teams</option>
-            {% for team in department_summary %}
-                <option value="{{ team.TeamID.TeamName }}">{{ team.TeamID.TeamName }}</option>
-            {% endfor %}
-        </select>
+        <div class="filter-controls">
+            <select id="team-dropdown" class="form-select" onchange="filterDepartmentList()">
+                <option value="all">All Teams</option>
+                {% for item in department_summary %}
+                    <option value="{{ item.TeamID.TeamName }}">{{ item.TeamID.TeamName }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <ul id="department-summary-list" class="list-group mt-3">
-            {% for team in department_summary %}
-                <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
-                    Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
+            {% for item in department_summary %}
+                <li class="list-group-item" data-team="{{ item.TeamID.TeamName }}">
+                    Team: {{ item.TeamID.TeamName }}, Total Votes: {{ item.TotalVotes }}
                 </li>
             {% endfor %}
         </ul>
         <div class="chart-container" id="departmentChartContainer">
-            <h4>Department Vote Distribution</h4>
             <canvas id="departmentPieChart"></canvas>
         </div>
     </div>
@@ -91,28 +95,31 @@
 
     {% if user.role == "senior_engineer" %}
     <div class="role-section">
-        <h2>Company‑Wide Summary</h2>
-        <select id="department-dropdown" class="form-select mb-2" onchange="filterDepartments()">
-            <option value="all">All Departments</option>
-            {% for dept in company_summary %}
-                <option value="{{ dept.TeamID.DepartmentID.DepartmentName }}">{{ dept.TeamID.DepartmentID.DepartmentName }}</option>
-            {% endfor %}
-        </select>
-        <select id="team-dropdown" class="form-select mb-3" onchange="filterTeams()">
-            <option value="all">All Teams</option>
-            {% for dept in company_summary %}
-                <option value="{{ dept.TeamID.TeamName }}">{{ dept.TeamID.TeamName }}</option>
-            {% endfor %}
-        </select>
+        <h2>Company-Wide Summary</h2>
+        <div class="filter-controls">
+            <select id="department-dropdown" class="form-select" onchange="filterCompanyList()">
+                <option value="all">All Departments</option>
+                {% for item in company_summary %}
+                    <option value="{{ item.TeamID.DepartmentID.DepartmentName }}">{{ item.TeamID.DepartmentID.DepartmentName }}</option>
+                {% endfor %}
+            </select>
+            <select id="team-dropdown" class="form-select" onchange="filterCompanyList()">
+                <option value="all">All Teams</option>
+                {% for item in company_summary %}
+                    <option value="{{ item.TeamID.TeamName }}">{{ item.TeamID.TeamName }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <ul id="company-summary-list" class="list-group mt-3">
-            {% for dept in company_summary %}
-                <li class="list-group-item" data-department="{{ dept.TeamID.DepartmentID.DepartmentName }}" data-team="{{ dept.TeamID.TeamName }}">
-                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }}, Team: {{ dept.TeamID.TeamName }}, Total Votes: {{ dept.TotalVotes }}
+            {% for item in company_summary %}
+                <li class="list-group-item" data-department="{{ item.TeamID.DepartmentID.DepartmentName }}" data-team="{{ item.TeamID.TeamName }}">
+                    Department: {{ item.TeamID.DepartmentID.DepartmentName }},
+                    Team: {{ item.TeamID.TeamName }},
+                    Total Votes: {{ item.TotalVotes }}
                 </li>
             {% endfor %}
         </ul>
         <div class="chart-container" id="companyChartContainer">
-            <h4>Company‑Wide Vote Distribution</h4>
             <canvas id="companyPieChart"></canvas>
         </div>
     </div>
@@ -120,68 +127,73 @@
 </div>
 
 {% if department_summary %}
-    {{ department_summary|json_script:"department-data" }}
+{{ department_summary|json_script:"department-data" }}
 {% else %}
-    <script id="department-data" type="application/json">[]</script>
+<script id="department-data" type="application/json">[]</script>
 {% endif %}
 
 {% if company_summary %}
-    {{ company_summary|json_script:"company-data" }}
+{{ company_summary|json_script:"company-data" }}
 {% else %}
-    <script id="company-data" type="application/json">[]</script>
+<script id="company-data" type="application/json">[]</script>
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const departmentVotes = JSON.parse(document.getElementById('department-data').textContent);
-    const companyVotes = JSON.parse(document.getElementById('company-data').textContent);
+    const deptData = JSON.parse(document.getElementById("department-data").textContent);
+    const compData = JSON.parse(document.getElementById("company-data").textContent);
 
     function buildPie(ctx, red, yellow, green, containerId) {
         const total = red + yellow + green;
-        if (total === 0) {
+        if (!total) {
             const container = document.getElementById(containerId);
             container.innerHTML = "<p class='no-data'>No vote data available.</p>";
             return;
         }
         return new Chart(ctx, {
-            type: 'pie',
+            type: "pie",
             data: {
-                labels: ['Red', 'Yellow', 'Green'],
+                labels: ["Red", "Yellow", "Green"],
                 datasets: [{
                     data: [red, yellow, green],
-                    backgroundColor: ['#FF0000', '#FFD700', '#008000']
+                    backgroundColor: ["#ff4d4d", "#ffe066", "#4caf50"]
                 }]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { position: 'top' } },
-                elements: { arc: { borderWidth: 2, borderColor: "#ccc" } }
+                plugins: {
+                    legend: { position: "top" }
+                }
             }
         });
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        if (document.getElementById('departmentPieChart') && departmentVotes.length) {
-            const d = departmentVotes[0];
-            buildPie(document.getElementById('departmentPieChart').getContext('2d'), d.RedVotes, d.YellowVotes, d.GreenVotes, 'departmentChartContainer');
+        if (document.getElementById("departmentPieChart") && deptData.length) {
+            const d = deptData[0];
+            buildPie(document.getElementById("departmentPieChart").getContext("2d"), d.RedVotes, d.YellowVotes, d.GreenVotes, "departmentChartContainer");
         }
-        if (document.getElementById('companyPieChart') && companyVotes.length) {
-            const c = companyVotes[0];
-            buildPie(document.getElementById('companyPieChart').getContext('2d'), c.RedVotes, c.YellowVotes, c.GreenVotes, 'companyChartContainer');
+
+        if (document.getElementById("companyPieChart") && compData.length) {
+            const c = compData[0];
+            buildPie(document.getElementById("companyPieChart").getContext("2d"), c.RedVotes, c.YellowVotes, c.GreenVotes, "companyChartContainer");
         }
     });
 
-    function filterTeams() {
-        const selected = document.getElementById('team-dropdown')?.value;
-        document.querySelectorAll('[data-team]').forEach(el => {
-            el.style.display = selected === 'all' || el.dataset.team === selected ? 'block' : 'none';
+    function filterDepartmentList() {
+        const selected = document.getElementById("team-dropdown").value;
+        document.querySelectorAll("#department-summary-list li").forEach(li => {
+            li.style.display = selected === "all" || li.dataset.team === selected ? "block" : "none";
         });
     }
 
-    function filterDepartments() {
-        const selected = document.getElementById('department-dropdown')?.value;
-        document.querySelectorAll('[data-department]').forEach(el => {
-            el.style.display = selected === 'all' || el.dataset.department === selected ? 'block' : 'none';
+    function filterCompanyList() {
+        const selectedDept = document.getElementById("department-dropdown").value;
+        const selectedTeam = document.getElementById("team-dropdown").value;
+        document.querySelectorAll("#company-summary-list li").forEach(li => {
+            const deptMatch = selectedDept === "all" || li.dataset.department === selectedDept;
+            const teamMatch = selectedTeam === "all" || li.dataset.team === selectedTeam;
+            li.style.display = deptMatch && teamMatch ? "block" : "none";
         });
     }
 </script>
