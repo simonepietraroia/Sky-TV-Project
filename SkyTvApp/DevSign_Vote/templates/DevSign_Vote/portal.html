@@ -1,4 +1,5 @@
 {% extends "DevSign_Vote/base.html" %}
+{% load static %}
 
 {% block title %}Portal - DevSign_Vote{% endblock %}
 
@@ -167,12 +168,10 @@
 <script>
     function buildPie(ctx, red, yellow, green) {
         const total = red + yellow + green;
-
         if (total === 0) {
             ctx.canvas.parentNode.innerHTML = "<p class='no-data'>No vote data available.</p>";
             return;
         }
-
         return new Chart(ctx, {
             type: 'pie',
             data: {
@@ -190,6 +189,7 @@
         const voteData = JSON.parse(document.getElementById('vote-data').textContent);
         const trendCtx = document.getElementById('trendPieChart')?.getContext('2d');
         if (trendCtx && voteData) {
+            console.log("Vote data:", voteData);
             buildPie(trendCtx, voteData.red || 0, voteData.yellow || 0, voteData.green || 0);
         }
 
