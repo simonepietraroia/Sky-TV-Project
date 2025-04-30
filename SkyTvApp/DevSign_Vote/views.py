@@ -56,15 +56,13 @@ def edit_profile(request):
         'teams': teams,
     })
 
-
 @login_required
 def portal_view(request, session_id=None):
     user = request.user
     context = {'user': user}
-    health_cards = HealthCard.objects.all()
-    context['health_cards'] = health_cards
 
     def calculate_section_trends(votes_queryset):
+        from collections import defaultdict
         trends = defaultdict(list)
         for vote in votes_queryset:
             if vote.CardID and vote.Progress:
@@ -85,24 +83,35 @@ def portal_view(request, session_id=None):
         return result
 
     if user.role == "team_leader":
-        sessions = Session.objects.filter(UserID=user)
+        sessions = Session.objects.filter(UserID=user).order_by('-StartTime')
         context['team_sessions'] = sessions
 
-        latest_session = sessions.order_by('-StartTime').first()
+        latest_session = sessions.first()
         if latest_session:
+            # Filter only selected health cards from the session
+            selected_cards = latest_session.health_cards.all()
+            context['health_cards'] = selected_cards
+
             vote_counts = Vote.objects.filter(SessionID=latest_session).aggregate(
-                RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
-                YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
-                GreenVotes=Count('VoteID', filter=Q(VoteValue=3)),
+                red=Count('VoteID', filter=Q(VoteValue=1)),
+                yellow=Count('VoteID', filter=Q(VoteValue=2)),
+                green=Count('VoteID', filter=Q(VoteValue=3)),
             )
-            vote_counts['TotalVotes'] = sum(vote_counts.values())
-            context['department_summary'] = [vote_counts]
+            context['vote_data'] = vote_counts
 
             section_votes = Vote.objects.filter(SessionID=latest_session)
-            context['section_trends'] = calculate_section_trends(section_votes)
+            section_trends = calculate_section_trends(section_votes)
+            context['section_trends'] = section_trends
+
+            context['topics'] = [
+                {"description": card.Description, "trend": section_trends.get(card.Description, 'neutral')}
+                for card in selected_cards
+            ]
         else:
-            context['department_summary'] = []
+            context['health_cards'] = []
+            context['vote_data'] = {"red": 0, "yellow": 0, "green": 0}
             context['section_trends'] = {}
+            context['topics'] = []
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
@@ -112,17 +121,25 @@ def portal_view(request, session_id=None):
             votes = Vote.objects.filter(TeamID=team)
             if votes.exists():
                 aggregated = votes.aggregate(
-                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
-                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
-                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
+                    red=Count('VoteID', filter=Q(VoteValue=1)),
+                    yellow=Count('VoteID', filter=Q(VoteValue=2)),
+                    green=Count('VoteID', filter=Q(VoteValue=3))
                 )
                 aggregated['TeamID'] = team
                 aggregated['TotalVotes'] = sum(aggregated.values())
                 vote_data.append(aggregated)
 
         context['department_summary'] = vote_data
+
         section_votes = Vote.objects.filter(TeamID__in=teams)
-        context['section_trends'] = calculate_section_trends(section_votes)
+        section_trends = calculate_section_trends(section_votes)
+        context['section_trends'] = section_trends
+
+        all_cards = HealthCard.objects.all()
+        context['topics'] = [
+            {"description": card.Description, "trend": section_trends.get(card.Description, 'neutral')}
+            for card in all_cards
+        ]
 
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
@@ -132,9 +149,9 @@ def portal_view(request, session_id=None):
             votes = Vote.objects.filter(TeamID__DepartmentID=dept)
             if votes.exists():
                 aggregated = votes.aggregate(
-                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
-                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
-                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
+                    red=Count('VoteID', filter=Q(VoteValue=1)),
+                    yellow=Count('VoteID', filter=Q(VoteValue=2)),
+                    green=Count('VoteID', filter=Q(VoteValue=3))
                 )
                 team = Team.objects.filter(DepartmentID=dept).first()
                 aggregated['TeamID'] = team
@@ -143,13 +160,16 @@ def portal_view(request, session_id=None):
                 vote_data.append(aggregated)
 
         context['company_summary'] = vote_data
-        section_votes = Vote.objects.all()
-        context['section_trends'] = calculate_section_trends(section_votes)
 
-    context['topics'] = [
-        {"description": card.Description, "trend": context['section_trends'].get(card.Description, 'neutral')}
-        for card in health_cards
-    ]
+        section_votes = Vote.objects.all()
+        section_trends = calculate_section_trends(section_votes)
+        context['section_trends'] = section_trends
+
+        all_cards = HealthCard.objects.all()
+        context['topics'] = [
+            {"description": card.Description, "trend": section_trends.get(card.Description, 'neutral')}
+            for card in all_cards
+        ]
 
     return render(request, 'DevSign_Vote/portal.html', context)
 
