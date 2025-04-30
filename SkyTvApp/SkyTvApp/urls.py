@@ -20,6 +20,8 @@ urlpatterns = [
     path('sessions/', session_select, name='session-select'),
     path('sessions/<int:session_id>/', views.join_session, name='join_session'),
     path('sessions/<int:session_id>/portal/', views.portal_view, name='portal'),
+    path("confirmation/", views.confirmation_view, name="confirmation"),
+
 ]
 
 if settings.DEBUG:
