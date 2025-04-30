@@ -17,18 +17,56 @@ def homepage(request):
     return render(request, 'DevSign_Vote/home.html')
 
 
+@csrf_exempt
+def signup(request):
+    if request.method == "POST":
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.role = form.cleaned_data['role']
+            user.save()
+            return redirect('login')
+    else:
+        form = UserRegisterForm()
+    return render(request, "DevSign_Vote/signup.html", {"form": form})
+
+
+@csrf_exempt
+def user_login(request):
+    if request.method == "POST":
+        form = EmailAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get("username")
+            password = form.cleaned_data.get("password")
+            user = authenticate(email=email, password=password)
+            if user:
+                login(request, user)
+                return redirect("portal") if user.role != "engineer" else redirect("session-select")
+            else:
+                messages.error(request, "Invalid login credentials.")
+        else:
+            messages.error(request, "Invalid form input.")
+    else:
+        form = EmailAuthenticationForm()
+    return render(request, "DevSign_Vote/login.html", {"form": form})
+
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, "You have been logged out.")
+    return redirect("home")
+
+
 @login_required
 def profile(request):
     user = request.user
     profile_image_base64 = None
-
     if user.profile_image:
         try:
             image_bytes = user.profile_image.read()
             profile_image_base64 = base64.b64encode(image_bytes).decode("utf-8")
         except Exception:
             pass
-
     return render(request, "DevSign_Vote/profile.html", {
         "user": user,
         "profile_image_base64": profile_image_base64
@@ -39,7 +77,6 @@ def profile(request):
 @login_required
 def edit_profile(request):
     user = request.user
-
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
@@ -69,108 +106,210 @@ def edit_profile(request):
 
 
 @login_required
+@csrf_exempt
+def create_voting_session(request):
+    if not request.user.is_team_leader():
+        messages.error(request, "Only team leaders can create sessions.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = VotingSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.UserID = request.user
+            session.Status = "Open"
+            session.save()
+            form.save_m2m()
+            messages.success(request, "Session created successfully.")
+            return redirect("session-select")
+    else:
+        form = VotingSessionForm()
+    return render(request, "DevSign_Vote/create_session.html", {"form": form})
+
+
+@login_required
+@csrf_exempt
+def vote_on_session(request, session_id):
+    session = get_object_or_404(Session, pk=session_id)
+
+    if request.user.role != "engineer":
+        messages.error(request, "Only engineers can vote.")
+        return redirect("home")
+
+    if session.Status == "Closed" or session.EndTime < timezone.now():
+        messages.error(request, "Voting is closed for this session.")
+        return redirect("session-select")
+
+    health_cards = HealthCard.objects.all()
+
+    if request.method == "POST":
+        for card in health_cards:
+            vote_value = request.POST.get(f"vote_{card.CardID}")
+            trend = request.POST.get(f"trend_{card.CardID}")
+            comment = request.POST.get(f"comment_{card.CardID}")
+            if vote_value and trend:
+                Vote.objects.create(
+                    TeamID=request.user.TeamID,
+                    UserID=request.user,
+                    CardID=card,
+                    SessionID=session,
+                    VoteValue=vote_value,
+                    Progress=trend,
+                    Comment=comment
+                )
+        messages.success(request, "Your votes have been submitted.")
+        return redirect("confirmation", session_id=session.SessionID)
+
+    return render(request, "DevSign_Vote/vote_session.html", {
+        "session": session,
+        "cards": health_cards
+    })
+
+
+@login_required
+def session_select(request):
+    now = timezone.now()
+    sessions = Session.objects.filter(Status="Open", EndTime__gt=now)
+
+    department_id = request.GET.get('department')
+    team_id = request.GET.get('team')
+
+    if department_id:
+        sessions = sessions.filter(DepartmentID=department_id)
+    if team_id:
+        sessions = sessions.filter(TeamID=team_id)
+
+    return render(request, 'DevSign_Vote/session-select.html', {
+        'sessions': sessions,
+        'departments': Department.objects.all(),
+        'teams': Team.objects.all()
+    })
+
+
+@login_required
+@csrf_exempt
+def join_session(request, session_id):
+    session = get_object_or_404(Session, pk=session_id)
+    cards = session.health_cards.all()
+
+    if request.method == "POST":
+        for card in cards:
+            vote_value = request.POST.get(f"vote_{card.CardID}")
+            trend = request.POST.get(f"trend_{card.CardID}")
+            comment = request.POST.get(f"comment_{card.CardID}")
+            if vote_value and trend:
+                Vote.objects.create(
+                    TeamID=request.user.TeamID,
+                    UserID=request.user,
+                    CardID=card,
+                    SessionID=session,
+                    VoteValue=vote_value,
+                    Progress=trend,
+                    Comment=comment
+                )
+        messages.success(request, "Votes submitted successfully.")
+        return redirect("confirmation", session_id=session.SessionID)
+
+    return render(request, 'DevSign_Vote/voting.html', {
+        "session": session,
+        "cards": cards
+    })
+
+
+@login_required
+@csrf_exempt
+def confirmation_view(request, session_id):
+    session = get_object_or_404(Session, pk=session_id)
+    return render(request, "DevSign_Vote/confirmation.html", {"session": session})
+
+
+@login_required
 def portal_view(request):
     user = request.user
     if user.role == "engineer":
-        messages.error(request, "You are not authorized to view this page.")
-        return redirect('home')
+        messages.error(request, "You are not authorized to access the portal.")
+        return redirect("home")
 
     context = {'user': user}
     health_cards = HealthCard.objects.all()
     context['health_cards'] = health_cards
 
-    def calculate_section_trends(votes_queryset):
+    def calculate_trends(votes):
         trends = defaultdict(str)
-        for vote in votes_queryset:
+        for vote in votes:
             if vote.CardID and vote.Progress:
                 trends[vote.CardID.Description] = vote.Progress
         return trends
 
     if user.role == "team_leader":
         sessions = Session.objects.filter(UserID=user).order_by('-StartTime')
-        context['team_sessions'] = sessions
-        latest_session = sessions.first()
-        if latest_session:
-            vote_counts = Vote.objects.filter(SessionID=latest_session).aggregate(
-                RedVotes=Count('VoteID', filter=Q(VoteValue=1)) or 0,
-                YellowVotes=Count('VoteID', filter=Q(VoteValue=2)) or 0,
-                GreenVotes=Count('VoteID', filter=Q(VoteValue=3)) or 0,
-            )
-            vote_counts['RedVotes'] = vote_counts['RedVotes'] or 0
-            vote_counts['YellowVotes'] = vote_counts['YellowVotes'] or 0
-            vote_counts['GreenVotes'] = vote_counts['GreenVotes'] or 0
-            vote_counts['TotalVotes'] = vote_counts['RedVotes'] + vote_counts['YellowVotes'] + vote_counts['GreenVotes']
-            context['department_summary'] = [vote_counts]
-            section_votes = Vote.objects.filter(SessionID=latest_session)
-            context['section_trends'] = calculate_section_trends(section_votes)
+        context["team_sessions"] = sessions
+        latest = sessions.first()
+        if latest:
+            votes = Vote.objects.filter(SessionID=latest)
+            context["department_summary"] = [votes.aggregate(
+                RedVotes=Count("VoteID", filter=Q(VoteValue=1)) or 0,
+                YellowVotes=Count("VoteID", filter=Q(VoteValue=2)) or 0,
+                GreenVotes=Count("VoteID", filter=Q(VoteValue=3)) or 0
+            )]
+            context["section_trends"] = calculate_trends(votes)
         else:
-            context['department_summary'] = [{"RedVotes": 0, "YellowVotes": 0, "GreenVotes": 0, "TotalVotes": 0}]
-            context['section_trends'] = {}
+            context["department_summary"] = [{"RedVotes": 0, "YellowVotes": 0, "GreenVotes": 0}]
+            context["section_trends"] = {}
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
         context['teams'] = teams
-        selected_team_id = request.GET.get('team')
-        selected_session_id = request.GET.get('session')
+        selected_team = request.GET.get("team")
+        selected_session = request.GET.get("session")
         sessions = Session.objects.filter(TeamID__in=teams)
-        if selected_team_id:
-            sessions = sessions.filter(TeamID=selected_team_id)
-        if selected_session_id:
-            sessions = sessions.filter(SessionID=selected_session_id)
-        vote_data = []
-        for team in teams:
-            votes = Vote.objects.filter(TeamID=team)
-            if votes.exists():
-                aggregated = votes.aggregate(
-                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)) or 0,
-                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)) or 0,
-                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3)) or 0
+        if selected_team:
+            sessions = sessions.filter(TeamID=selected_team)
+        if selected_session:
+            sessions = sessions.filter(SessionID=selected_session)
+        votes = Vote.objects.filter(TeamID__in=teams)
+        context["sessions"] = sessions
+        context["department_summary"] = [
+            {
+                "TeamID": team,
+                **Vote.objects.filter(TeamID=team).aggregate(
+                    RedVotes=Count("VoteID", filter=Q(VoteValue=1)) or 0,
+                    YellowVotes=Count("VoteID", filter=Q(VoteValue=2)) or 0,
+                    GreenVotes=Count("VoteID", filter=Q(VoteValue=3)) or 0
                 )
-                aggregated['RedVotes'] = aggregated['RedVotes'] or 0
-                aggregated['YellowVotes'] = aggregated['YellowVotes'] or 0
-                aggregated['GreenVotes'] = aggregated['GreenVotes'] or 0
-                aggregated['TeamID'] = team
-                aggregated['TotalVotes'] = aggregated['RedVotes'] + aggregated['YellowVotes'] + aggregated['GreenVotes']
-                vote_data.append(aggregated)
-        context['department_summary'] = vote_data
-        context['sessions'] = sessions
-        context['section_trends'] = calculate_section_trends(Vote.objects.filter(TeamID__in=teams))
+            }
+            for team in teams
+        ]
+        context["section_trends"] = calculate_trends(votes)
 
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
-        selected_dept_id = request.GET.get('department')
-        selected_team_id = request.GET.get('team')
-        selected_session_id = request.GET.get('session')
-
+        selected_dept = request.GET.get("department")
+        selected_team = request.GET.get("team")
+        selected_session = request.GET.get("session")
         sessions = Session.objects.all()
-        if selected_dept_id:
-            sessions = sessions.filter(DepartmentID=selected_dept_id)
-        if selected_team_id:
-            sessions = sessions.filter(TeamID=selected_team_id)
-        if selected_session_id:
-            sessions = sessions.filter(SessionID=selected_session_id)
-
+        if selected_dept:
+            sessions = sessions.filter(DepartmentID=selected_dept)
+        if selected_team:
+            sessions = sessions.filter(TeamID=selected_team)
+        if selected_session:
+            sessions = sessions.filter(SessionID=selected_session)
         vote_data = []
         for dept in departments:
             votes = Vote.objects.filter(TeamID__DepartmentID=dept)
             if votes.exists():
-                aggregated = votes.aggregate(
-                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)) or 0,
-                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)) or 0,
-                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3)) or 0
+                first_team = Team.objects.filter(DepartmentID=dept).first()
+                data = votes.aggregate(
+                    RedVotes=Count("VoteID", filter=Q(VoteValue=1)) or 0,
+                    YellowVotes=Count("VoteID", filter=Q(VoteValue=2)) or 0,
+                    GreenVotes=Count("VoteID", filter=Q(VoteValue=3)) or 0
                 )
-                aggregated['RedVotes'] = aggregated['RedVotes'] or 0
-                aggregated['YellowVotes'] = aggregated['YellowVotes'] or 0
-                aggregated['GreenVotes'] = aggregated['GreenVotes'] or 0
-                team = Team.objects.filter(DepartmentID=dept).first()
-                aggregated['TeamID'] = team
-                aggregated['TeamID'].DepartmentID = dept
-                aggregated['TotalVotes'] = aggregated['RedVotes'] + aggregated['YellowVotes'] + aggregated['GreenVotes']
-                vote_data.append(aggregated)
+                data["TeamID"] = first_team
+                data["TeamID"].DepartmentID = dept
+                vote_data.append(data)
+        context["departments"] = departments
+        context["sessions"] = sessions
+        context["company_summary"] = vote_data
+        context["section_trends"] = calculate_trends(Vote.objects.all())
 
-        context['departments'] = departments
-        context['company_summary'] = vote_data
-        context['sessions'] = sessions
-        context['section_trends'] = calculate_section_trends(Vote.objects.all())
-
-    return render(request, 'DevSign_Vote/portal.html', context)
+    return render(request, "DevSign_Vote/portal.html", context)
