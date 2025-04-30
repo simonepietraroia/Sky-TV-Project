@@ -31,8 +31,8 @@
     <p>Our goal is to simplify team health assessments and deliver insights that drive better decisions and team growth. Your feedback is crucial to the success of this platform.</p>
 
     {% if user.is_authenticated %}
-        {% if user.role == "engineer" %}
-            <a href="{% url 'session-select' %}" class="btn btn-primary btn-lg mt-3">Begin to Vote</a>
+        {% if user.role == "engineer" or user.role == "team_leader" %}
+            <a href="{% url 'session-select' %}" class="btn btn-primary btn-lg mt-3">Get Started</a>
         {% else %}
             <a href="{% url 'portal' %}" class="btn btn-primary btn-lg mt-3">Go to Portal</a>
         {% endif %}
