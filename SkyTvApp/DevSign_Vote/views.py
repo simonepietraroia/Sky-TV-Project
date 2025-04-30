@@ -38,6 +38,7 @@ def profile(request):
 @login_required
 def edit_profile(request):
     user = request.user
+
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
@@ -49,11 +50,22 @@ def edit_profile(request):
     departments = Department.objects.all()
     teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID) if user.TeamID else Team.objects.none()
 
+    profile_image_base64 = None
+    if user.profile_image and hasattr(user.profile_image, 'read'):
+        try:
+            image_bytes = user.profile_image.read()
+            profile_image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+            user.profile_image.seek(0)  # reset after read
+        except Exception as e:
+            print(f"Error encoding image: {e}")
+
     return render(request, 'DevSign_Vote/edit_profile.html', {
         'form': form,
         'departments': departments,
         'teams': teams,
+        'profile_image_base64': profile_image_base64,
     })
+
 
 
 @login_required
@@ -205,6 +217,10 @@ def vote_on_session(request, session_id):
     health_cards = HealthCard.objects.all()
 
     if request.method == "POST":
+        if not request.user.TeamID:
+            messages.error(request, "You must belong to a team to submit votes.")
+            return redirect("session-select")
+
         for card in health_cards:
             vote_value = request.POST.get(f"vote_{card.CardID}")
             progress = request.POST.get(f"trend_{card.CardID}")
