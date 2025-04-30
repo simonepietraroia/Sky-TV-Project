@@ -381,3 +381,17 @@ footer {
     background: linear-gradient(to right, #005A9C, #2A6AD0);
 }
 
+/* buttons on home and confirmation pages */
+.my-custom-btn {
+    background-color: #1728e1;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    transform: background-color 0.3s ease, transform 0.2s ease;
+    display: inline-block;
+}
+
+.my-custom-btn:hover {
+    background-color: #d87ea4df;
+}

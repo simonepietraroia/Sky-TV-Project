@@ -32,10 +32,11 @@
     <p>If you have any inquiries, please feel free to reach out to us. We are happy to help.</p>
 
     {% if user.role == "engineer" %}
-        <a href="{% url 'home' %}" class="btn btn-primary btn-ly mt-5">Go to Home</a>
+        <a href="{% url 'home' %}" class="btn btn-primary btn-ly mt-5 my-custom-btn">Go to Home</a>
     {% else %}
-        <a href="{% url 'portal' session.SessionID %}" class="btn btn-primary btn-ly mt-5">Go to Portal</a> 
+        <a href="{% url 'portal' session.SessionID %}" class="btn btn-primary btn-ly mt-5 my-custom-btn">Go to Portal</a> 
     {% endif %}
+    <hr class="my-4"
 
 </div>
 {% endblock %}
