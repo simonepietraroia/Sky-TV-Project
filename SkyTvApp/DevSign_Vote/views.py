@@ -294,3 +294,7 @@ def join_session(request, session_id):
         'session': session,
         'cards': cards,
     })
+
+@login_required
+def confirmation_view(request):
+    return render(request, "DevSign_Vote/confirmation.html")
