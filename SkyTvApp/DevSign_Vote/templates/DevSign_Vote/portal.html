@@ -32,8 +32,9 @@
         padding: 20px;
         background: #f8f9fa;
         border-radius: 12px;
-        min-height: 400px;
+        min-height: 300px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
     }
@@ -69,29 +70,22 @@
     <div class="role-section">
         <h2>Department Summary</h2>
         <div class="filter-controls">
-            <select id="dept-team-dropdown" class="form-select" onchange="filterDepartmentList()">
+            <select id="dept-team-dropdown" class="form-select">
                 <option value="all">All Teams</option>
                 {% for item in department_summary %}
                     <option value="{{ item.TeamName }}">{{ item.TeamName }}</option>
                 {% endfor %}
             </select>
+            <select id="dept-session-dropdown" class="form-select">
+                <option value="latest">Latest Session</option>
+                {% for item in department_summary %}
+                    {% for session in item.Sessions %}
+                        <option value="{{ session.session_name }}" data-team="{{ item.TeamName }}">{{ session.session_name }}</option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
         </div>
-        <ul id="department-summary-list" class="list-group mt-3">
-            {% for item in department_summary %}
-                <li class="list-group-item" data-team="{{ item.TeamName }}">
-                    <strong>Team:</strong> {{ item.TeamName }}<br>
-                    <strong>Total Votes:</strong> {{ item.RedVotes|default:0|add:item.YellowVotes|default:0|add:item.GreenVotes|default:0 }}<br>
-                    <strong>Sessions:</strong>
-                    <ul>
-                        {% for session in item.Sessions %}
-                            <li>{{ session.session_name }} – {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} – Status: {{ session.Status }}</li>
-                        {% empty %}
-                            <li class="text-muted">No sessions</li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            {% endfor %}
-        </ul>
+        <div class="chart-container" id="departmentChartContainer"></div>
     </div>
     {% endif %}
 
@@ -99,13 +93,13 @@
     <div class="role-section">
         <h2>Company-Wide Summary</h2>
         <div class="filter-controls">
-            <select id="department-dropdown" class="form-select" onchange="filterCompanyList()">
+            <select id="department-dropdown" class="form-select">
                 <option value="all">All Departments</option>
                 {% for item in company_summary %}
                     <option value="{{ item.DepartmentName }}">{{ item.DepartmentName }}</option>
                 {% endfor %}
             </select>
-            <select id="company-team-dropdown" class="form-select" onchange="filterCompanyList()">
+            <select id="company-team-dropdown" class="form-select">
                 <option value="all">All Teams</option>
                 {% for item in company_summary %}
                     {% for team in item.Teams %}
@@ -113,46 +107,102 @@
                     {% endfor %}
                 {% endfor %}
             </select>
-        </div>
-        <ul id="company-summary-list" class="list-group mt-3">
-            {% for item in company_summary %}
-                {% for team in item.Teams %}
-                    <li class="list-group-item" data-department="{{ item.DepartmentName }}" data-team="{{ team.TeamName }}">
-                        <strong>Department:</strong> {{ item.DepartmentName }}<br>
-                        <strong>Team:</strong> {{ team.TeamName }}<br>
-                        <strong>Total Votes:</strong> {{ team.TotalVotes }}<br>
-                        <strong>Sessions:</strong>
-                        <ul>
-                            {% for session in team.Sessions %}
-                                <li>{{ session.session_name }} – {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} – Status: {{ session.Status }}</li>
-                            {% empty %}
-                                <li class="text-muted">No sessions</li>
-                            {% endfor %}
-                        </ul>
-                    </li>
+            <select id="company-session-dropdown" class="form-select">
+                <option value="latest">Latest Session</option>
+                {% for item in company_summary %}
+                    {% for team in item.Teams %}
+                        {% for session in team.Sessions %}
+                            <option value="{{ session.session_name }}" data-team="{{ team.TeamName }}">{{ session.session_name }}</option>
+                        {% endfor %}
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
-        </ul>
+            </select>
+        </div>
+        <div class="chart-container" id="companyChartContainer"></div>
     </div>
     {% endif %}
 </div>
 
+<script id="vote-data-json" type="application/json">{{ vote_data|safe }}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function filterDepartmentList() {
-        const selected = document.getElementById("dept-team-dropdown").value;
-        document.querySelectorAll("#department-summary-list li").forEach(li => {
-            li.style.display = selected === "all" || li.dataset.team === selected ? "block" : "none";
+    const voteData = JSON.parse(document.getElementById("vote-data-json").textContent);
+    let currentChart = null;
+
+    function buildChart(data, containerId, canvasId, sessionName) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `
+            <p><strong>Session:</strong> ${sessionName}</p>
+            <canvas id="${canvasId}"></canvas>
+        `;
+        const ctx = document.getElementById(canvasId).getContext("2d");
+
+        const total = data.RedVotes + data.YellowVotes + data.GreenVotes;
+        if (total === 0) {
+            container.innerHTML = `<p class="text-muted">No vote data available for session <strong>${sessionName}</strong>.</p>`;
+            return;
+        }
+
+        if (currentChart) currentChart.destroy();
+
+        currentChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels: ["Red", "Yellow", "Green"],
+                datasets: [{
+                    data: [data.RedVotes, data.YellowVotes, data.GreenVotes],
+                    backgroundColor: ["#ff4d4d", "#ffe066", "#4caf50"]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: "top" }
+                }
+            }
         });
     }
 
-    function filterCompanyList() {
-        const selectedDept = document.getElementById("department-dropdown").value;
-        const selectedTeam = document.getElementById("company-team-dropdown").value;
-        document.querySelectorAll("#company-summary-list li").forEach(li => {
-            const deptMatch = selectedDept === "all" || li.dataset.department === selectedDept;
-            const teamMatch = selectedTeam === "all" || li.dataset.team === selectedTeam;
-            li.style.display = deptMatch && teamMatch ? "block" : "none";
-        });
+    function updateChart(role) {
+        let team = "";
+        let session = "";
+
+        if (role === "department_leader") {
+            team = document.getElementById("dept-team-dropdown").value;
+            session = document.getElementById("dept-session-dropdown").value;
+            if (team === "all" || !voteData[team]) return;
+        } else if (role === "senior_engineer") {
+            team = document.getElementById("company-team-dropdown").value;
+            session = document.getElementById("company-session-dropdown").value;
+            if (team === "all" || !voteData[team]) return;
+        }
+
+        if (session === "latest") {
+            session = Object.keys(voteData[team])[0];
+        }
+
+        const data = voteData[team][session];
+        const containerId = role === "department_leader" ? "departmentChartContainer" : "companyChartContainer";
+        const canvasId = `${containerId}-canvas`;
+        buildChart(data, containerId, canvasId, session);
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const role = "{{ user.role }}";
+
+        // Run chart once at load
+        updateChart(role);
+
+        // On dropdown change
+        if (role === "department_leader") {
+            document.getElementById("dept-team-dropdown").addEventListener("change", () => updateChart(role));
+            document.getElementById("dept-session-dropdown").addEventListener("change", () => updateChart(role));
+        }
+
+        if (role === "senior_engineer") {
+            document.getElementById("company-team-dropdown").addEventListener("change", () => updateChart(role));
+            document.getElementById("company-session-dropdown").addEventListener("change", () => updateChart(role));
+        }
+    });
 </script>
 {% endblock %}

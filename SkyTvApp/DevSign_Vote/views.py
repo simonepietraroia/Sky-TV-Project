@@ -296,6 +296,7 @@ def portal_view(request):
         context["department_summary"] = [
             {
                 "TeamName": team.Name,
+                "Sessions": Session.objects.filter(TeamID=team).order_by('-StartTime'),
                 **Vote.objects.filter(TeamID=team).aggregate(
                     RedVotes=Count("VoteID", filter=Q(VoteValue=1)) or 0,
                     YellowVotes=Count("VoteID", filter=Q(VoteValue=2)) or 0,
@@ -323,15 +324,23 @@ def portal_view(request):
 
         vote_data = []
         for dept in departments:
-            votes = Vote.objects.filter(TeamID__DepartmentID=dept)
-            if votes.exists():
-                data = votes.aggregate(
-                    RedVotes=Count("VoteID", filter=Q(VoteValue=1)) or 0,
-                    YellowVotes=Count("VoteID", filter=Q(VoteValue=2)) or 0,
-                    GreenVotes=Count("VoteID", filter=Q(VoteValue=3)) or 0
-                )
-                data["DepartmentName"] = dept.Name
-                vote_data.append(data)
+            teams = Team.objects.filter(DepartmentID=dept)
+            team_data = []
+            for team in teams:
+                team_votes = Vote.objects.filter(TeamID=team)
+                team_sessions = Session.objects.filter(TeamID=team).order_by('-StartTime')
+                team_data.append({
+                    "TeamName": team.Name,
+                    "Sessions": team_sessions,
+                    "RedVotes": team_votes.filter(VoteValue=1).count(),
+                    "YellowVotes": team_votes.filter(VoteValue=2).count(),
+                    "GreenVotes": team_votes.filter(VoteValue=3).count(),
+                })
+
+            vote_data.append({
+                "DepartmentName": dept.Name,
+                "Teams": team_data
+            })
 
         context["departments"] = departments
         context["company_summary"] = vote_data
