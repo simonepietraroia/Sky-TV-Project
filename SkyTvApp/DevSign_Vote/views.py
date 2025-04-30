@@ -88,7 +88,12 @@ def edit_profile(request):
         form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
-            return redirect('profile')
+            if user.role == "engineer":
+                return redirect("session-select")
+            elif user.role == "team_leader":
+                return redirect("create_session")
+            else:
+                return redirect("portal")
     else:
         form = ProfileUpdateForm(instance=user)
 
