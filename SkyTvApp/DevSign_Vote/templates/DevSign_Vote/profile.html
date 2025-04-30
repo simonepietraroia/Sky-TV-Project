@@ -4,12 +4,6 @@
 <div class="container text-center">
     <h2>Welcome {{ user.first_name }}!</h2>
 
-    {% if profile_image_base64 %}
-        <img src="data:image/jpeg;base64,{{ profile_image_base64 }}" class="profile-img" alt="Profile Picture">
-    {% else %}
-        <img src="https://via.placeholder.com/100" class="profile-img" alt="Default Profile">
-    {% endif %}
-
     <hr>
     <p><strong>First Name:</strong> {{ user.first_name }}</p>
     <p><strong>Last Name:</strong> {{ user.last_name }}</p>
