@@ -17,21 +17,15 @@
                     <img src="{% static 'DevSign_Vote/sky_logo.png' %}" class="nav-logo" alt="Sky TV's logo">
                 </a>
                 {% if user.is_authenticated %}
-                    <div class="nav-item dropdown profile-container">
-                        <a class="nav-link profile-dropdown-toggle" id="profileDropdownToggle">
-                            {% if user.profile_image %}
-                                <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
-                                     class="navbar-profile-img" alt="Profile Image">
-                            {% else %}
-                                <span class="navbar-text">{{ user.first_name }} {{ user.last_name }}</span>
-                            {% endif %}
-                        </a>
-                        
-                    
-                            <p><strong>{{ user.role }}</strong></p>
-                            <p>{{ user.first_name }} {{ user.last_name }}</p>
-                            <a href="{% url 'profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
-                            <a href="{% url 'logout' %}" class="btn btn-danger btn-sm mt-2">Logout</a>
+                    <div class="d-flex align-items-center gap-3">
+                        {% if user.profile_image %}
+                            <img src="data:image/jpeg;base64,{{ user.profile_image|decode_image }}" 
+                                class="rounded-circle" alt="Profile Image" width="40" height="40">
+                        {% endif %}
+                        <span class="fw-bold">{{ user.first_name }} {{ user.last_name }}</span>
+                        <span class="text-muted">{{ user.role }}</span>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-primary btn-sm">Edit Profile</a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
                     </div>
                 {% else %}
                     <div class="d-flex">
