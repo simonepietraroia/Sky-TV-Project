@@ -58,6 +58,7 @@ def edit_profile(request):
 
 @login_required
 def portal_view(request, session_id=None):
+    from collections import defaultdict
     user = request.user
     context = {'user': user}
 
@@ -79,12 +80,26 @@ def portal_view(request, session_id=None):
                 YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
                 GreenVotes=Count('VoteID', filter=Q(VoteValue=3)),
             )
-            context['vote_data'] = vote_counts
+
+            # ensure no None values
+            vote_counts['RedVotes'] = vote_counts['RedVotes'] or 0
+            vote_counts['YellowVotes'] = vote_counts['YellowVotes'] or 0
+            vote_counts['GreenVotes'] = vote_counts['GreenVotes'] or 0
+
+            vote_counts['TotalVotes'] = vote_counts['RedVotes'] + vote_counts['YellowVotes'] + vote_counts['GreenVotes']
+
+            # Needed for JS to access chart data
+            context['department_summary'] = [vote_counts]
 
             section_votes = Vote.objects.filter(SessionID=latest_session)
             context['section_trends'] = calculate_section_trends(section_votes)
         else:
-            context['vote_data'] = {"RedVotes": 0, "YellowVotes": 0, "GreenVotes": 0}
+            context['department_summary'] = [{
+                "RedVotes": 0,
+                "YellowVotes": 0,
+                "GreenVotes": 0,
+                "TotalVotes": 0
+            }]
             context['section_trends'] = {}
 
     elif user.role == "department_leader":
@@ -99,8 +114,12 @@ def portal_view(request, session_id=None):
                     YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
                     GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
                 )
+                aggregated['RedVotes'] = aggregated['RedVotes'] or 0
+                aggregated['YellowVotes'] = aggregated['YellowVotes'] or 0
+                aggregated['GreenVotes'] = aggregated['GreenVotes'] or 0
+
                 aggregated['TeamID'] = team
-                aggregated['TotalVotes'] = sum([aggregated['RedVotes'], aggregated['YellowVotes'], aggregated['GreenVotes']])
+                aggregated['TotalVotes'] = aggregated['RedVotes'] + aggregated['YellowVotes'] + aggregated['GreenVotes']
                 vote_data.append(aggregated)
 
         context['department_summary'] = vote_data
@@ -119,10 +138,14 @@ def portal_view(request, session_id=None):
                     YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
                     GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
                 )
+                aggregated['RedVotes'] = aggregated['RedVotes'] or 0
+                aggregated['YellowVotes'] = aggregated['YellowVotes'] or 0
+                aggregated['GreenVotes'] = aggregated['GreenVotes'] or 0
+
                 team = Team.objects.filter(DepartmentID=dept).first()
                 aggregated['TeamID'] = team
                 aggregated['TeamID'].DepartmentID = dept
-                aggregated['TotalVotes'] = sum([aggregated['RedVotes'], aggregated['YellowVotes'], aggregated['GreenVotes']])
+                aggregated['TotalVotes'] = aggregated['RedVotes'] + aggregated['YellowVotes'] + aggregated['GreenVotes']
                 vote_data.append(aggregated)
 
         context['company_summary'] = vote_data
@@ -130,7 +153,6 @@ def portal_view(request, session_id=None):
         context['section_trends'] = calculate_section_trends(section_votes)
 
     return render(request, 'DevSign_Vote/portal.html', context)
-
 
 @csrf_exempt
 def signup(request):
