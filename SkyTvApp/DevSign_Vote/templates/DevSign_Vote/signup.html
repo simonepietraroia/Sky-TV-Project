@@ -5,16 +5,40 @@
 <div class="wrapper-signup">
     <div class="content-signup">
         <div class="signup-container">
+            <!-- Left Section -->
             <div class="left-section-signup">
-                <img src="{% static 'images/sky-logo.png' %}" alt="Sky Logo">
+                <img src="{% static 'DevSign_Vote/sky_logo.png' %}" alt="Sky Logo">
                 <h2>Join SKY</h2>
                 <p>Enjoy personalized features</p>
             </div>
+
+            <!-- Right Section (Form) -->
             <div class="right-section-signup">
                 <h3>Create Your Account</h3>
                 <form method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
+
+                    <div class="signup-form-group">
+                        <label for="{{ form.email.id_for_label }}">Email:</label>
+                        {{ form.email }}
+                    </div>
+
+                    <div class="signup-form-group">
+                        <label for="{{ form.password1.id_for_label }}">Password:</label>
+                        {{ form.password1 }}
+                        <small>{{ form.password1.help_text }}</small>
+                    </div>
+
+                    <div class="signup-form-group">
+                        <label for="{{ form.password2.id_for_label }}">Confirm Password:</label>
+                        {{ form.password2 }}
+                    </div>
+
+                    <div class="signup-form-group">
+                        <label for="{{ form.role.id_for_label }}">Role:</label>
+                        {{ form.role }}
+                    </div>
+
                     <button type="submit" class="signup-btn">Create Account</button>
                 </form>
             </div>
