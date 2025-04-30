@@ -9,16 +9,11 @@
         background: #f0f5ff !important;
         font-family: 'Segoe UI', sans-serif;
         color: #222;
-        margin: 0;
-        padding: 0;
-        height: 100%;
     }
     .container {
         max-width: 1100px;
         margin: 0 auto;
         padding: 20px;
-        min-height: calc(100vh - 100px);
-        box-sizing: border-box;
     }
     .role-section {
         background: #fff;
@@ -34,21 +29,12 @@
         border-radius: 12px;
         min-height: 400px;
         display: flex;
-        gap: 20px;
-    }
-    .chart-side {
-        flex: 2;
-        display: flex;
-        justify-content: center;
         align-items: center;
-    }
-    .filter-side {
-        flex: 1;
+        justify-content: center;
     }
     .no-data {
         color: #777;
         font-style: italic;
-        font-size: 1rem;
     }
 </style>
 
@@ -59,66 +45,37 @@
     {% if user.role == "team_leader" %}
     <div class="role-section">
         <h2>Your Team's Voting Sessions</h2>
-        {% if team_sessions %}
-            <select id="team-session-dropdown" class="form-select" onchange="filterSessions()">
-                <option value="all">All Sessions</option>
-                {% for session in team_sessions %}
-                    <option value="{{ session.SessionID }}">{{ session.session_name }}</option>
+
+        {% if team_session_data %}
+            <select id="sessionDropdown" class="form-select mb-3" onchange="renderSessionData()">
+                {% for session in team_session_data %}
+                    <option value="{{ session.id }}">{{ session.name }}</option>
                 {% endfor %}
             </select>
-            <ul id="team-sessions-list" class="list-group mt-3">
-                {% for session in team_sessions %}
-                    <li class="list-group-item" data-session-id="{{ session.SessionID }}">
-                        <strong>{{ session.session_name }}</strong> – {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} – Status: {{ session.Status }}
-                    </li>
-                {% endfor %}
-            </ul>
+
+            <div id="sessionInfo" class="mb-3"></div>
+
+            <div class="chart-container">
+                <canvas id="trendPieChart" width="400" height="400"></canvas>
+            </div>
         {% else %}
             <p class="text-muted">No previous sessions.</p>
         {% endif %}
-
-        <div class="chart-container">
-            <div class="filter-side">
-                <h5>Vote Topics & Trends</h5>
-                <ul class="list-group" id="trend-list">
-                    {% for topic in topics %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center trend-item"
-                            data-card="{{ topic.description }}">
-                            {{ topic.description }}
-                            <span class="badge 
-                                {% if topic.trend == "up" %}bg-success
-                                {% elif topic.trend == "down" %}bg-danger
-                                {% else %}bg-secondary{% endif %} rounded-pill">
-                                {% if topic.trend == "up" %}⬆️
-                                {% elif topic.trend == "down" %}⬇️
-                                {% else %}–{% endif %}
-                            </span>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="chart-side">
-                <canvas id="trendPieChart"></canvas>
-            </div>
-        </div>
     </div>
     {% endif %}
 
     {% if user.role == "department_leader" %}
     <div class="role-section">
         <h2>Department Summary</h2>
-        <ul class="list-group mt-3">
+        <ul class="list-group">
             {% for team in department_summary %}
                 <li class="list-group-item">
                     Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
                 </li>
             {% endfor %}
         </ul>
-
-        <div class="chart-container">
-            <div class="chart-side">
-                <canvas id="departmentPieChart"></canvas>
-            </div>
+        <div class="chart-container mt-3">
+            <canvas id="departmentPieChart"></canvas>
         </div>
     </div>
     {% endif %}
@@ -126,31 +83,24 @@
     {% if user.role == "senior_engineer" %}
     <div class="role-section">
         <h2>Company‑Wide Summary</h2>
-        <ul class="list-group mt-3">
+        <ul class="list-group">
             {% for dept in company_summary %}
                 <li class="list-group-item">
-                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }}, 
-                    Team: {{ dept.TeamID.TeamName }}, 
+                    Department: {{ dept.TeamID.DepartmentID.DepartmentName }},
+                    Team: {{ dept.TeamID.TeamName }},
                     Total Votes: {{ dept.TotalVotes }}
                 </li>
             {% endfor %}
         </ul>
-
-        <div class="chart-container">
-            <div class="chart-side">
-                <canvas id="companyPieChart"></canvas>
-            </div>
+        <div class="chart-container mt-3">
+            <canvas id="companyPieChart"></canvas>
         </div>
     </div>
     {% endif %}
 </div>
 {% endblock %}
 
-{% if vote_data %}
-    {{ vote_data|json_script:"vote-data" }}
-{% else %}
-    <script id="vote-data" type="application/json">{"red":0,"yellow":0,"green":0}</script>
-{% endif %}
+{{ team_session_data|json_script:"session-vote-data" }}
 
 {% if department_summary %}
     {{ department_summary|json_script:"department-data" }}
@@ -166,46 +116,67 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    let chartInstance = null;
+
     function buildPie(ctx, red, yellow, green) {
         const total = red + yellow + green;
         if (total === 0) {
             ctx.canvas.parentNode.innerHTML = "<p class='no-data'>No vote data available.</p>";
-            return;
+            return null;
         }
+
         return new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: ['Red Votes', 'Yellow Votes', 'Green Votes'],
+                labels: ['Red', 'Yellow', 'Green'],
                 datasets: [{
                     data: [red, yellow, green],
                     backgroundColor: ['#ff4d4d', '#ffe066', '#4caf50']
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
         });
     }
 
+    function renderSessionData() {
+        const sessionData = JSON.parse(document.getElementById("session-vote-data").textContent);
+        const selectedId = parseInt(document.getElementById("sessionDropdown").value);
+        const session = sessionData.find(s => s.id === selectedId);
+
+        const infoBox = document.getElementById("sessionInfo");
+        infoBox.innerHTML = `
+            <strong>${session.name}</strong><br>
+            ${session.start} to ${session.end} — <em>Status:</em> ${session.status}
+        `;
+
+        const ctx = document.getElementById("trendPieChart").getContext("2d");
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+        chartInstance = buildPie(ctx, session.red, session.yellow, session.green);
+    }
+
     function initializePieCharts() {
-        const voteData = JSON.parse(document.getElementById('vote-data').textContent);
-        const trendCtx = document.getElementById('trendPieChart')?.getContext('2d');
-        if (trendCtx && voteData) {
-            console.log("Vote data:", voteData);
-            buildPie(trendCtx, voteData.red || 0, voteData.yellow || 0, voteData.green || 0);
+        if (document.getElementById("departmentPieChart")) {
+            const dData = JSON.parse(document.getElementById("department-data").textContent);
+            const d = dData.length ? dData[0] : { red: 0, yellow: 0, green: 0 };
+            buildPie(document.getElementById("departmentPieChart").getContext("2d"), d.red, d.yellow, d.green);
         }
 
-        const departmentVotes = JSON.parse(document.getElementById('department-data').textContent) || [];
-        const companyVotes = JSON.parse(document.getElementById('company-data').textContent) || [];
-
-        if (document.getElementById('departmentPieChart')) {
-            const d = departmentVotes.length ? departmentVotes[0] : { red: 0, yellow: 0, green: 0 };
-            buildPie(document.getElementById('departmentPieChart').getContext('2d'), d.red, d.yellow, d.green);
-        }
-
-        if (document.getElementById('companyPieChart')) {
-            const c = companyVotes.length ? companyVotes[0] : { red: 0, yellow: 0, green: 0 };
-            buildPie(document.getElementById('companyPieChart').getContext('2d'), c.red, c.yellow, c.green);
+        if (document.getElementById("companyPieChart")) {
+            const cData = JSON.parse(document.getElementById("company-data").textContent);
+            const c = cData.length ? cData[0] : { red: 0, yellow: 0, green: 0 };
+            buildPie(document.getElementById("companyPieChart").getContext("2d"), c.red, c.yellow, c.green);
         }
     }
 
-    document.addEventListener("DOMContentLoaded", initializePieCharts);
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.getElementById("sessionDropdown")) {
+            renderSessionData();  // render first session
+        }
+        initializePieCharts();
+    });
 </script>

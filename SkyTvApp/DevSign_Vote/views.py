@@ -61,57 +61,30 @@ def portal_view(request, session_id=None):
     user = request.user
     context = {'user': user}
 
-    def calculate_section_trends(votes_queryset):
-        from collections import defaultdict
-        trends = defaultdict(list)
-        for vote in votes_queryset:
-            if vote.CardID and vote.Progress:
-                trends[vote.CardID.Description].append(vote.Progress)
-
-        result = {}
-        for desc, trend_list in trends.items():
-            up_count = trend_list.count('up')
-            down_count = trend_list.count('down')
-
-            if up_count > down_count:
-                result[desc] = 'up'
-            elif down_count > up_count:
-                result[desc] = 'down'
-            else:
-                result[desc] = 'neutral'
-
-        return result
-
     if user.role == "team_leader":
         sessions = Session.objects.filter(UserID=user).order_by('-StartTime')
         context['team_sessions'] = sessions
 
-        latest_session = sessions.first()
-        if latest_session:
-            # Filter only selected health cards from the session
-            selected_cards = latest_session.health_cards.all()
-            context['health_cards'] = selected_cards
-
-            vote_counts = Vote.objects.filter(SessionID=latest_session).aggregate(
+        team_session_data = []
+        for session in sessions:
+            counts = Vote.objects.filter(SessionID=session).aggregate(
                 red=Count('VoteID', filter=Q(VoteValue=1)),
                 yellow=Count('VoteID', filter=Q(VoteValue=2)),
-                green=Count('VoteID', filter=Q(VoteValue=3)),
+                green=Count('VoteID', filter=Q(VoteValue=3))
             )
-            context['vote_data'] = vote_counts
 
-            section_votes = Vote.objects.filter(SessionID=latest_session)
-            section_trends = calculate_section_trends(section_votes)
-            context['section_trends'] = section_trends
+            team_session_data.append({
+                "id": session.SessionID,
+                "name": session.session_name,
+                "start": session.StartTime.strftime("%Y-%m-%d %H:%M"),
+                "end": session.EndTime.strftime("%Y-%m-%d %H:%M"),
+                "status": session.Status,
+                "red": counts["red"],
+                "yellow": counts["yellow"],
+                "green": counts["green"]
+            })
 
-            context['topics'] = [
-                {"description": card.Description, "trend": section_trends.get(card.Description, 'neutral')}
-                for card in selected_cards
-            ]
-        else:
-            context['health_cards'] = []
-            context['vote_data'] = {"red": 0, "yellow": 0, "green": 0}
-            context['section_trends'] = {}
-            context['topics'] = []
+        context["team_session_data"] = team_session_data
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
@@ -130,16 +103,6 @@ def portal_view(request, session_id=None):
                 vote_data.append(aggregated)
 
         context['department_summary'] = vote_data
-
-        section_votes = Vote.objects.filter(TeamID__in=teams)
-        section_trends = calculate_section_trends(section_votes)
-        context['section_trends'] = section_trends
-
-        all_cards = HealthCard.objects.all()
-        context['topics'] = [
-            {"description": card.Description, "trend": section_trends.get(card.Description, 'neutral')}
-            for card in all_cards
-        ]
 
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
@@ -160,16 +123,6 @@ def portal_view(request, session_id=None):
                 vote_data.append(aggregated)
 
         context['company_summary'] = vote_data
-
-        section_votes = Vote.objects.all()
-        section_trends = calculate_section_trends(section_votes)
-        context['section_trends'] = section_trends
-
-        all_cards = HealthCard.objects.all()
-        context['topics'] = [
-            {"description": card.Description, "trend": section_trends.get(card.Description, 'neutral')}
-            for card in all_cards
-        ]
 
     return render(request, 'DevSign_Vote/portal.html', context)
 
