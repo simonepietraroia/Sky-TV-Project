@@ -7,7 +7,8 @@
 <div class="container mt-5">
     <h2 class="text-center mb-4">Vote for Session: {{ session.session_name }}</h2>
 
-    <form method="post" action="{% url 'vote_on_session' session.SessionID %}">
+    <!-- POST to the voting view (not confirmation) -->
+    <form method="post" action="{% url 'voting' session.SessionID %}">
         {% csrf_token %}
         {% for card in cards %}
             <div class="card mb-4 shadow-sm rounded p-4">
