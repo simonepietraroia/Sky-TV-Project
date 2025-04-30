@@ -61,13 +61,28 @@ def edit_profile(request):
 def portal_view(request, session_id=None):
     user = request.user
     context = {'user': user}
+    health_cards = HealthCard.objects.all()
+    context['health_cards'] = health_cards
 
     def calculate_section_trends(votes_queryset):
-        trends = defaultdict(str)
+        trends = defaultdict(list)
         for vote in votes_queryset:
             if vote.CardID and vote.Progress:
-                trends[vote.CardID.Description] = vote.Progress
-        return trends
+                trends[vote.CardID.Description].append(vote.Progress)
+
+        result = {}
+        for desc, trend_list in trends.items():
+            up_count = trend_list.count('up')
+            down_count = trend_list.count('down')
+
+            if up_count > down_count:
+                result[desc] = 'up'
+            elif down_count > up_count:
+                result[desc] = 'down'
+            else:
+                result[desc] = 'neutral'
+
+        return result
 
     if user.role == "team_leader":
         sessions = Session.objects.filter(UserID=user)
@@ -131,7 +146,13 @@ def portal_view(request, session_id=None):
         section_votes = Vote.objects.all()
         context['section_trends'] = calculate_section_trends(section_votes)
 
+    context['topics'] = [
+        {"description": card.Description, "trend": context['section_trends'].get(card.Description, 'neutral')}
+        for card in health_cards
+    ]
+
     return render(request, 'DevSign_Vote/portal.html', context)
+
 
 @csrf_exempt
 def signup(request):
