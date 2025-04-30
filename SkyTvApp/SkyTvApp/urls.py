@@ -10,7 +10,8 @@ from DevSign_Vote.views import (
     user_login,
     user_logout,
     vote_on_session,
-    session_select
+    session_select,
+    create_voting_session
 )
 from DevSign_Vote import views
 
@@ -22,11 +23,12 @@ urlpatterns = [
     path("signup/", signup, name="signup"),
     path("login/", user_login, name="login"),
     path("logout/", user_logout, name="logout"),
+    path("create_session/", create_voting_session, name="create_session"),
     path("vote/<int:session_id>/", vote_on_session, name="voting"),
     path('sessions/', session_select, name='session-select'),
     path('sessions/<int:session_id>/', views.join_session, name='join_session'),
     path('sessions/<int:session_id>/portal/', views.portal_view, name='portal'),
-    path("confirmation/", views.confirmation_view, name="confirmation"),
+    path("confirmation/<int:session_id>/", views.confirmation_view, name="confirmation")
 ]
 
 if settings.DEBUG:

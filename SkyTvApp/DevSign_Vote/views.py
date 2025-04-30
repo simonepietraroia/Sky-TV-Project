@@ -277,5 +277,30 @@ def join_session(request, session_id):
     })
 
 @login_required
-def confirmation_view(request):
-    return render(request, "DevSign_Vote/confirmation.html")
+@csrf_exempt
+def create_voting_session(request):
+    if not request.user.is_team_leader():
+        messages.error(request, "Only team leaders can create sessions.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = VotingSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.UserID = request.user
+            session.Status = "Open"
+            session.save()
+            form.save_m2m()
+
+            messages.success(request, "Session created successfully!")
+            return redirect('session-select')
+    else:
+        form = VotingSessionForm()
+
+    return render(request, 'DevSign_Vote/create_session.html', {'form': form})
+
+@login_required
+@csrf_exempt
+def confirmation_view(request, session_id): 
+    session = get_object_or_404(Session, pk=session_id)
+    return render(request, 'DevSign_Vote/confirmation.html', {'session':session})
