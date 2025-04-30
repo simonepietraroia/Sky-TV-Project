@@ -29,7 +29,7 @@ urlpatterns = [
     path('vote/<int:session_id>/', vote_on_session, name='voting'),
     path('sessions/', session_select, name='session-select'),
     path('sessions/<int:session_id>/', join_session, name='join_session'),
-    path('sessions/<int:session_id>/portal/', portal_view, name='portal'),
+    path('portal/', portal_view, name='portal'),
     path('confirmation/<int:session_id>/', confirmation_view, name='confirmation'),
 ]
 
