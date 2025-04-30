@@ -168,7 +168,8 @@ def vote_on_session(request, session_id):
 
     if session.Status == "Closed" or session.EndTime < timezone.now():
         messages.error(request, "This session is closed.")
-        return redirect("portal")
+        return redirect("portal", session_id=session.SessionID)
+
 
     health_cards = HealthCard.objects.all()
 
@@ -194,7 +195,7 @@ def vote_on_session(request, session_id):
         if request.user.role == "engineer":
             return redirect("confirmation")
         else:
-            return redirect("portal")
+            return redirect("portal", session_id=session.SessionID)
 
     return render(request, "DevSign_Vote/vote_session.html", {
         "session": session,
@@ -252,7 +253,8 @@ def join_session(request, session_id):
                 )
 
         messages.success(request, "Your votes have been submitted successfully!")
-        return redirect("portal")
+        return redirect("portal", session_id=session.SessionID)
+
 
     return render(request, 'DevSign_Vote/voting.html', {
         'session': session,
