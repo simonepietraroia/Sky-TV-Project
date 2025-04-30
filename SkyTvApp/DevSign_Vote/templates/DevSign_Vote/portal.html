@@ -68,27 +68,30 @@
             <ul id="team-sessions-list" class="list-group mt-3">
                 {% for session in team_sessions %}
                     <li class="list-group-item" data-session-id="{{ session.SessionID }}">
-                        <strong>{{ session.session_name }}</strong> –
-                        {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} –
-                        Status: {{ session.Status }}
+                        <strong>{{ session.session_name }}</strong> – {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} – Status: {{ session.Status }}
                     </li>
                 {% endfor %}
             </ul>
         {% else %}
             <p class="text-muted">No previous sessions.</p>
         {% endif %}
+
         <div class="chart-container" id="departmentChartContainer">
             <div class="filter-side">
                 <h5>Vote Topics</h5>
                 <ul class="list-group">
-                    {% for section, trend in section_trends.items %}
+                    {% for card in health_cards %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ section }}
-                            {% if trend == "up" %}
-                                <span class="badge bg-success rounded-pill">⬆️</span>
-                            {% elif trend == "down" %}
-                                <span class="badge bg-danger rounded-pill">⬇️</span>
-                            {% endif %}
+                            {{ card.Description }}
+                            {% with trend=section_trends|get_item:card.Description %}
+                                {% if trend == "up" %}
+                                    <span class="badge bg-success rounded-pill">⬆️</span>
+                                {% elif trend == "down" %}
+                                    <span class="badge bg-danger rounded-pill">⬇️</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill">–</span>
+                                {% endif %}
+                            {% endwith %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -114,22 +117,25 @@
                 <li class="list-group-item" data-team="{{ team.TeamID.TeamName }}">
                     Team: {{ team.TeamID.TeamName }}, Total Votes: {{ team.TotalVotes }}
                 </li>
-            {% empty %}
-                <li class="list-group-item">No data available.</li>
             {% endfor %}
         </ul>
+
         <div class="chart-container" id="departmentChartContainer">
             <div class="filter-side">
                 <h5>Vote Topics</h5>
                 <ul class="list-group">
-                    {% for section, trend in section_trends.items %}
+                    {% for card in health_cards %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ section }}
-                            {% if trend == "up" %}
-                                <span class="badge bg-success rounded-pill">⬆️</span>
-                            {% elif trend == "down" %}
-                                <span class="badge bg-danger rounded-pill">⬇️</span>
-                            {% endif %}
+                            {{ card.Description }}
+                            {% with trend=section_trends|get_item:card.Description %}
+                                {% if trend == "up" %}
+                                    <span class="badge bg-success rounded-pill">⬆️</span>
+                                {% elif trend == "down" %}
+                                    <span class="badge bg-danger rounded-pill">⬇️</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill">–</span>
+                                {% endif %}
+                            {% endwith %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -163,22 +169,25 @@
                     Team: {{ dept.TeamID.TeamName }},
                     Total Votes: {{ dept.TotalVotes }}
                 </li>
-            {% empty %}
-                <li class="list-group-item">No data available.</li>
             {% endfor %}
         </ul>
+
         <div class="chart-container" id="companyChartContainer">
             <div class="filter-side">
                 <h5>Vote Topics</h5>
                 <ul class="list-group">
-                    {% for section, trend in section_trends.items %}
+                    {% for card in health_cards %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ section }}
-                            {% if trend == "up" %}
-                                <span class="badge bg-success rounded-pill">⬆️</span>
-                            {% elif trend == "down" %}
-                                <span class="badge bg-danger rounded-pill">⬇️</span>
-                            {% endif %}
+                            {{ card.Description }}
+                            {% with trend=section_trends|get_item:card.Description %}
+                                {% if trend == "up" %}
+                                    <span class="badge bg-success rounded-pill">⬆️</span>
+                                {% elif trend == "down" %}
+                                    <span class="badge bg-danger rounded-pill">⬇️</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill">–</span>
+                                {% endif %}
+                            {% endwith %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -211,8 +220,7 @@
     function buildPie(ctx, red, yellow, green, containerId) {
         const total = red + yellow + green;
         if (total === 0) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = "<p class='no-data'>No vote data available for this session.</p>";
+            document.getElementById(containerId).innerHTML = "<p class='no-data'>No vote data available.</p>";
             return;
         }
         return new Chart(ctx, {
