@@ -163,27 +163,43 @@ def user_logout(request):
 
 @login_required
 @csrf_exempt
-def create_voting_session(request):
-    if not request.user.is_team_leader():
-        messages.error(request, "Only team leaders can create sessions.")
-        return redirect('home')
+def vote_on_session(request, session_id):
+    session = Session.objects.get(pk=session_id)
 
-    if request.method == 'POST':
-        form = VotingSessionForm(request.POST)
-        if form.is_valid():
-            session = form.save(commit=False)
-            session.UserID = request.user
-            session.Status = "Open"
-            session.save()
-            form.save_m2m()
+    if session.Status == "Closed" or session.EndTime < timezone.now():
+        messages.error(request, "This session is closed.")
+        return redirect("portal")
 
-            messages.success(request, "Session created successfully!")
-            return redirect('session-select')
-    else:
-        form = VotingSessionForm()
+    health_cards = HealthCard.objects.all()
 
-    return render(request, 'DevSign_Vote/create_session.html', {'form': form})
+    if request.method == "POST":
+        for card in health_cards:
+            vote_value = request.POST.get(f"vote_{card.CardID}")
+            progress = request.POST.get(f"trend_{card.CardID}")
+            comment = request.POST.get(f"comment_{card.CardID}")
 
+            if vote_value and progress:
+                Vote.objects.create(
+                    TeamID=request.user.TeamID,
+                    UserID=request.user,
+                    CardID=card,
+                    SessionID=session,
+                    VoteValue=vote_value,
+                    Progress=progress,
+                    Comment=comment
+                )
+
+        messages.success(request, "Your votes have been submitted.")
+
+        if request.user.role == "engineer":
+            return redirect("confirmation")
+        else:
+            return redirect("portal")
+
+    return render(request, "DevSign_Vote/vote_session.html", {
+        "session": session,
+        "cards": health_cards
+    })
 
 @login_required
 @csrf_exempt
