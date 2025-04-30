@@ -62,10 +62,6 @@
         {% else %}
             <p class="text-muted">No sessions available.</p>
         {% endif %}
-
-        <div class="chart-container" id="departmentChartContainer">
-            <canvas id="departmentPieChart"></canvas>
-        </div>
     </div>
     {% endif %}
 
@@ -73,23 +69,29 @@
     <div class="role-section">
         <h2>Department Summary</h2>
         <div class="filter-controls">
-            <select id="team-dropdown" class="form-select" onchange="filterDepartmentList()">
+            <select id="dept-team-dropdown" class="form-select" onchange="filterDepartmentList()">
                 <option value="all">All Teams</option>
                 {% for item in department_summary %}
-                    <option value="{{ item.TeamID.TeamName }}">{{ item.TeamID.TeamName }}</option>
+                    <option value="{{ item.TeamName }}">{{ item.TeamName }}</option>
                 {% endfor %}
             </select>
         </div>
         <ul id="department-summary-list" class="list-group mt-3">
             {% for item in department_summary %}
-                <li class="list-group-item" data-team="{{ item.TeamID.TeamName }}">
-                    Team: {{ item.TeamID.TeamName }}, Total Votes: {{ item.TotalVotes }}
+                <li class="list-group-item" data-team="{{ item.TeamName }}">
+                    <strong>Team:</strong> {{ item.TeamName }}<br>
+                    <strong>Total Votes:</strong> {{ item.RedVotes|default:0|add:item.YellowVotes|default:0|add:item.GreenVotes|default:0 }}<br>
+                    <strong>Sessions:</strong>
+                    <ul>
+                        {% for session in item.Sessions %}
+                            <li>{{ session.session_name }} – {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} – Status: {{ session.Status }}</li>
+                        {% empty %}
+                            <li class="text-muted">No sessions</li>
+                        {% endfor %}
+                    </ul>
                 </li>
             {% endfor %}
         </ul>
-        <div class="chart-container" id="departmentChartContainer">
-            <canvas id="departmentPieChart"></canvas>
-        </div>
     </div>
     {% endif %}
 
@@ -100,88 +102,44 @@
             <select id="department-dropdown" class="form-select" onchange="filterCompanyList()">
                 <option value="all">All Departments</option>
                 {% for item in company_summary %}
-                    <option value="{{ item.TeamID.DepartmentID.DepartmentName }}">{{ item.TeamID.DepartmentID.DepartmentName }}</option>
+                    <option value="{{ item.DepartmentName }}">{{ item.DepartmentName }}</option>
                 {% endfor %}
             </select>
-            <select id="team-dropdown" class="form-select" onchange="filterCompanyList()">
+            <select id="company-team-dropdown" class="form-select" onchange="filterCompanyList()">
                 <option value="all">All Teams</option>
                 {% for item in company_summary %}
-                    <option value="{{ item.TeamID.TeamName }}">{{ item.TeamID.TeamName }}</option>
+                    {% for team in item.Teams %}
+                        <option value="{{ team.TeamName }}">{{ team.TeamName }}</option>
+                    {% endfor %}
                 {% endfor %}
             </select>
         </div>
         <ul id="company-summary-list" class="list-group mt-3">
             {% for item in company_summary %}
-                <li class="list-group-item" data-department="{{ item.TeamID.DepartmentID.DepartmentName }}" data-team="{{ item.TeamID.TeamName }}">
-                    Department: {{ item.TeamID.DepartmentID.DepartmentName }},
-                    Team: {{ item.TeamID.TeamName }},
-                    Total Votes: {{ item.TotalVotes }}
-                </li>
+                {% for team in item.Teams %}
+                    <li class="list-group-item" data-department="{{ item.DepartmentName }}" data-team="{{ team.TeamName }}">
+                        <strong>Department:</strong> {{ item.DepartmentName }}<br>
+                        <strong>Team:</strong> {{ team.TeamName }}<br>
+                        <strong>Total Votes:</strong> {{ team.TotalVotes }}<br>
+                        <strong>Sessions:</strong>
+                        <ul>
+                            {% for session in team.Sessions %}
+                                <li>{{ session.session_name }} – {{ session.StartTime|date:"Y-m-d H:i" }} to {{ session.EndTime|date:"Y-m-d H:i" }} – Status: {{ session.Status }}</li>
+                            {% empty %}
+                                <li class="text-muted">No sessions</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
             {% endfor %}
         </ul>
-        <div class="chart-container" id="companyChartContainer">
-            <canvas id="companyPieChart"></canvas>
-        </div>
     </div>
     {% endif %}
 </div>
 
-{% if department_summary %}
-{{ department_summary|json_script:"department-data" }}
-{% else %}
-<script id="department-data" type="application/json">[]</script>
-{% endif %}
-
-{% if company_summary %}
-{{ company_summary|json_script:"company-data" }}
-{% else %}
-<script id="company-data" type="application/json">[]</script>
-{% endif %}
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const deptData = JSON.parse(document.getElementById("department-data").textContent);
-    const compData = JSON.parse(document.getElementById("company-data").textContent);
-
-    function buildPie(ctx, red, yellow, green, containerId) {
-        const total = red + yellow + green;
-        if (!total) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = "<p class='no-data'>No vote data available.</p>";
-            return;
-        }
-        return new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["Red", "Yellow", "Green"],
-                datasets: [{
-                    data: [red, yellow, green],
-                    backgroundColor: ["#ff4d4d", "#ffe066", "#4caf50"]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: "top" }
-                }
-            }
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        if (document.getElementById("departmentPieChart") && deptData.length) {
-            const d = deptData[0];
-            buildPie(document.getElementById("departmentPieChart").getContext("2d"), d.RedVotes, d.YellowVotes, d.GreenVotes, "departmentChartContainer");
-        }
-
-        if (document.getElementById("companyPieChart") && compData.length) {
-            const c = compData[0];
-            buildPie(document.getElementById("companyPieChart").getContext("2d"), c.RedVotes, c.YellowVotes, c.GreenVotes, "companyChartContainer");
-        }
-    });
-
     function filterDepartmentList() {
-        const selected = document.getElementById("team-dropdown").value;
+        const selected = document.getElementById("dept-team-dropdown").value;
         document.querySelectorAll("#department-summary-list li").forEach(li => {
             li.style.display = selected === "all" || li.dataset.team === selected ? "block" : "none";
         });
@@ -189,7 +147,7 @@
 
     function filterCompanyList() {
         const selectedDept = document.getElementById("department-dropdown").value;
-        const selectedTeam = document.getElementById("team-dropdown").value;
+        const selectedTeam = document.getElementById("company-team-dropdown").value;
         document.querySelectorAll("#company-summary-list li").forEach(li => {
             const deptMatch = selectedDept === "all" || li.dataset.department === selectedDept;
             const teamMatch = selectedTeam === "all" || li.dataset.team === selectedTeam;
