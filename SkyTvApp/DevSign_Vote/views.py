@@ -30,7 +30,6 @@ def signup(request):
         form = UserRegisterForm()
     return render(request, "DevSign_Vote/signup.html", {"form": form})
 
-
 @csrf_exempt
 def user_login(request):
     if request.method == "POST":
@@ -39,16 +38,24 @@ def user_login(request):
             email = form.cleaned_data.get("username")
             password = form.cleaned_data.get("password")
             user = authenticate(email=email, password=password)
-            if user:
+            if user is not None:
                 login(request, user)
-                return redirect("portal") if user.role != "engineer" else redirect("session-select")
+                messages.success(request, "Welcome back!")
+                if user.role == "engineer":
+                    return redirect("session-select")
+                elif user.role == "team_leader":
+                    return redirect("session-select")
+                else:
+                    return redirect("portal")
             else:
-                messages.error(request, "Invalid login credentials.")
+                messages.error(request, "Invalid email or password.")
         else:
-            messages.error(request, "Invalid form input.")
+            messages.error(request, "Invalid credentials.")
     else:
         form = EmailAuthenticationForm()
+
     return render(request, "DevSign_Vote/login.html", {"form": form})
+
 
 
 def user_logout(request):
