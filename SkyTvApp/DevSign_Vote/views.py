@@ -11,7 +11,7 @@ from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm,
 from .models import Session, HealthCard, Department, Team, Vote
 
 import base64
-
+import json
 
 def homepage(request):
     return render(request, 'DevSign_Vote/home.html')
@@ -253,6 +253,7 @@ def portal_view(request):
                 trends[vote.CardID.Description] = vote.Progress
         return trends
 
+    # TEAM LEADER VIEW
     if user.role == "team_leader":
         sessions = Session.objects.filter(UserID=user).order_by('-StartTime')
         context["team_sessions"] = sessions
@@ -275,11 +276,12 @@ def portal_view(request):
             }]
             context["section_trends"] = {}
 
+    # DEPARTMENT LEADER VIEW
     elif user.role == "department_leader":
         department = user.TeamID.DepartmentID if user.TeamID and user.TeamID.DepartmentID else None
         teams = Team.objects.filter(DepartmentID=department) if department else Team.objects.none()
-        context['teams'] = teams
-        context['departments'] = Department.objects.all()
+        context["teams"] = teams
+        context["departments"] = Department.objects.all()
 
         selected_team = request.GET.get("team")
         selected_session = request.GET.get("session")
@@ -291,11 +293,13 @@ def portal_view(request):
             sessions = sessions.filter(SessionID=selected_session)
         context["sessions"] = sessions
 
-        votes = Vote.objects.filter(TeamID__in=teams)
         summary = []
+        vote_data = {}
         for team in teams:
             team_sessions = Session.objects.filter(TeamID=team).order_by('-StartTime')
             team_votes = Vote.objects.filter(TeamID=team)
+
+            # Summary for the UI
             summary.append({
                 "TeamName": team.Name,
                 "Sessions": team_sessions,
@@ -304,9 +308,24 @@ def portal_view(request):
                 "GreenVotes": team_votes.filter(VoteValue=3).count()
             })
 
-        context["department_summary"] = summary
-        context["section_trends"] = calculate_trends(votes)
+            # Session vote breakdown for charts
+            vote_data[team.Name] = {}
+            for session in team_sessions:
+                session_votes = Vote.objects.filter(SessionID=session)
+                vote_data[team.Name][session.session_name] = {
+                    "RedVotes": session_votes.filter(VoteValue=1).count(),
+                    "YellowVotes": session_votes.filter(VoteValue=2).count(),
+                    "GreenVotes": session_votes.filter(VoteValue=3).count(),
+                    "StartTime": str(session.StartTime),
+                    "EndTime": str(session.EndTime),
+                    "Status": session.Status
+                }
 
+        context["department_summary"] = summary
+        context["section_trends"] = calculate_trends(Vote.objects.filter(TeamID__in=teams))
+        context["vote_data"] = json.dumps(vote_data)
+
+    # SENIOR ENGINEER VIEW
     elif user.role == "senior_engineer":
         departments = Department.objects.all()
         context["departments"] = departments
@@ -324,13 +343,18 @@ def portal_view(request):
             sessions = sessions.filter(SessionID=selected_session)
         context["sessions"] = sessions
 
-        vote_data = []
+        company_summary = []
+        vote_data = {}
+
         for dept in departments:
             teams = Team.objects.filter(DepartmentID=dept)
             team_data = []
+
             for team in teams:
                 team_votes = Vote.objects.filter(TeamID=team)
                 team_sessions = Session.objects.filter(TeamID=team).order_by('-StartTime')
+
+                # Summary for team within department
                 team_data.append({
                     "TeamName": team.Name,
                     "Sessions": team_sessions,
@@ -339,12 +363,26 @@ def portal_view(request):
                     "GreenVotes": team_votes.filter(VoteValue=3).count()
                 })
 
-            vote_data.append({
-                "DepartmentName": dept.Name,
+                # Session vote data for chart
+                vote_data[team.Name] = {}
+                for session in team_sessions:
+                    session_votes = Vote.objects.filter(SessionID=session)
+                    vote_data[team.Name][session.session_name] = {
+                        "RedVotes": session_votes.filter(VoteValue=1).count(),
+                        "YellowVotes": session_votes.filter(VoteValue=2).count(),
+                        "GreenVotes": session_votes.filter(VoteValue=3).count(),
+                        "StartTime": str(session.StartTime),
+                        "EndTime": str(session.EndTime),
+                        "Status": session.Status
+                    }
+
+            company_summary.append({
+                "DepartmentName": dept.DepartmentName,
                 "Teams": team_data
             })
 
-        context["company_summary"] = vote_data
+        context["company_summary"] = company_summary
         context["section_trends"] = calculate_trends(Vote.objects.all())
+        context["vote_data"] = json.dumps(vote_data)
 
     return render(request, "DevSign_Vote/portal.html", context)

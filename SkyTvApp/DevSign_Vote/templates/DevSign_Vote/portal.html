@@ -72,16 +72,14 @@
         <div class="filter-controls">
             <select id="dept-team-dropdown" class="form-select">
                 <option value="all">All Teams</option>
-                {% for item in department_summary %}
-                    <option value="{{ item.TeamName }}">{{ item.TeamName }}</option>
+                {% for team in teams %}
+                    <option value="{{ team.Name }}">{{ team.Name }}</option>
                 {% endfor %}
             </select>
             <select id="dept-session-dropdown" class="form-select">
                 <option value="latest">Latest Session</option>
-                {% for item in department_summary %}
-                    {% for session in item.Sessions %}
-                        <option value="{{ session.session_name }}" data-team="{{ item.TeamName }}">{{ session.session_name }}</option>
-                    {% endfor %}
+                {% for session in sessions %}
+                    <option value="{{ session.session_name }}">{{ session.session_name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -95,8 +93,8 @@
         <div class="filter-controls">
             <select id="department-dropdown" class="form-select">
                 <option value="all">All Departments</option>
-                {% for item in company_summary %}
-                    <option value="{{ item.DepartmentName }}">{{ item.DepartmentName }}</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.DepartmentName }}">{{ dept.DepartmentName }}</option>
                 {% endfor %}
             </select>
             <select id="company-team-dropdown" class="form-select">
@@ -112,7 +110,7 @@
                 {% for item in company_summary %}
                     {% for team in item.Teams %}
                         {% for session in team.Sessions %}
-                            <option value="{{ session.session_name }}" data-team="{{ team.TeamName }}">{{ session.session_name }}</option>
+                            <option value="{{ session.session_name }}">{{ session.session_name }}</option>
                         {% endfor %}
                     {% endfor %}
                 {% endfor %}
@@ -190,10 +188,8 @@
     document.addEventListener("DOMContentLoaded", function () {
         const role = "{{ user.role }}";
 
-        // Run chart once at load
         updateChart(role);
 
-        // On dropdown change
         if (role === "department_leader") {
             document.getElementById("dept-team-dropdown").addEventListener("change", () => updateChart(role));
             document.getElementById("dept-session-dropdown").addEventListener("change", () => updateChart(role));
