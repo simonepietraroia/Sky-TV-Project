@@ -170,7 +170,12 @@ def user_login(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, "Welcome back!")
-                return redirect("home")
+
+               
+                if user.role == "team_leader":
+                    return redirect("create_session")  
+                else:
+                    return redirect("home")
             else:
                 messages.error(request, "Invalid email or password.")
         else:
@@ -179,6 +184,7 @@ def user_login(request):
         form = EmailAuthenticationForm()
 
     return render(request, "DevSign_Vote/login.html", {"form": form})
+
 
 
 def user_logout(request):
