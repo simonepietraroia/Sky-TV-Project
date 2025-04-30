@@ -1,29 +1,38 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.contrib.auth import login, logout, authenticate  
-from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm, VotingSessionForm
-import base64
-from django.core.files.base import ContentFile
-from django.views.decorators.csrf import csrf_exempt
-from .models import Session, HealthCard, Department, Team, Vote
-# AggregateVotesTable, TrendAnalysis
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
-from django.contrib import messages
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from django.db.models import Count, Q
 
+from .forms import UserRegisterForm, ProfileUpdateForm, EmailAuthenticationForm, VotingSessionForm
+from .models import Session, HealthCard, Department, Team, Vote
+
+import base64
 
 
 def homepage(request):
     return render(request, 'DevSign_Vote/home.html')
 
+
 @login_required
 def profile(request):
-    return render(request, "DevSign_Vote/profile.html")
+    user = request.user
+    profile_image_base64 = None
+
+    if user.profile_image:
+        try:
+            image_bytes = user.profile_image.read()
+            profile_image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        except Exception as e:
+            print(f"Error encoding image: {e}")
+
+    return render(request, "DevSign_Vote/profile.html", {
+        "user": user,
+        "profile_image_base64": profile_image_base64
+    })
+
 
 @csrf_exempt
 @login_required
@@ -48,23 +57,109 @@ def edit_profile(request):
 
 
 @login_required
-def portal_view(request, session_id):
+def portal_view(request, session_id=None):
     user = request.user
     context = {'user': user}
 
     if user.role == "team_leader":
-        context['team_sessions'] = Session.objects.filter(UserID=user)
+        sessions = Session.objects.filter(UserID=user)
+        context['team_sessions'] = sessions
+
+        latest_session = sessions.order_by('-StartTime').first()
+        if latest_session:
+            vote_counts = Vote.objects.filter(SessionID=latest_session).aggregate(
+                RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
+                YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
+                GreenVotes=Count('VoteID', filter=Q(VoteValue=3)),
+            )
+            vote_counts['TotalVotes'] = sum(vote_counts.values())
+            context['department_summary'] = [vote_counts]
+        else:
+            context['department_summary'] = []
 
     elif user.role == "department_leader":
         teams = Team.objects.filter(DepartmentID=user.TeamID.DepartmentID)
-        context['department_summary'] = AggregateVotesTable.objects.filter(TeamID__in=teams)
-        context['department_trends'] = TrendAnalysis.objects.filter(TeamID__in=teams)
+        vote_data = []
+
+        for team in teams:
+            votes = Vote.objects.filter(TeamID=team)
+            if votes.exists():
+                aggregated = votes.aggregate(
+                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
+                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
+                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
+                )
+                aggregated['TeamID'] = team
+                aggregated['TotalVotes'] = sum(aggregated.values())
+                vote_data.append(aggregated)
+
+        context['department_summary'] = vote_data
 
     elif user.role == "senior_engineer":
-        context['company_summary'] = AggregateVotesTable.objects.all()
-        context['company_trends'] = TrendAnalysis.objects.all()
+        departments = Department.objects.all()
+        vote_data = []
+
+        for dept in departments:
+            votes = Vote.objects.filter(TeamID__DepartmentID=dept)
+            if votes.exists():
+                aggregated = votes.aggregate(
+                    RedVotes=Count('VoteID', filter=Q(VoteValue=1)),
+                    YellowVotes=Count('VoteID', filter=Q(VoteValue=2)),
+                    GreenVotes=Count('VoteID', filter=Q(VoteValue=3))
+                )
+                team = Team.objects.filter(DepartmentID=dept).first()
+                aggregated['TeamID'] = team
+                aggregated['TeamID'].DepartmentID = dept
+                aggregated['TotalVotes'] = sum(aggregated.values())
+                vote_data.append(aggregated)
+
+        context['company_summary'] = vote_data
 
     return render(request, 'DevSign_Vote/portal.html', context)
+
+
+@csrf_exempt
+def signup(request):
+    if request.method == "POST":
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.role = form.cleaned_data['role']
+            user.save()
+            return redirect('login')
+    else:
+        form = UserRegisterForm()
+
+    return render(request, "DevSign_Vote/signup.html", {"form": form})
+
+
+@csrf_exempt
+def user_login(request):
+    if request.method == "POST":
+        form = EmailAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get("username")
+            password = form.cleaned_data.get("password")
+            user = authenticate(email=email, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, "Welcome back!")
+                return redirect("home")
+            else:
+                messages.error(request, "Invalid email or password.")
+        else:
+            messages.error(request, "Invalid credentials.")
+    else:
+        form = EmailAuthenticationForm()
+
+    return render(request, "DevSign_Vote/login.html", {"form": form})
+
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, "You have been logged out.")
+    return redirect("home")
+
 
 @login_required
 @csrf_exempt
@@ -89,74 +184,6 @@ def create_voting_session(request):
 
     return render(request, 'DevSign_Vote/create_session.html', {'form': form})
 
-@csrf_exempt
-def signup(request):
-    if request.method == "POST":
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False) 
-            user.role = form.cleaned_data['role']  
-            user.save()  
-            return redirect('login')  
-    else:
-        form = UserRegisterForm()
-
-    return render(request, "DevSign_Vote/signup.html", {"form": form})
-
-@csrf_exempt
-def user_login(request):
-    if request.method == "POST":
-        form = EmailAuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            email = form.cleaned_data.get("username") 
-            password = form.cleaned_data.get("password")
-            user = authenticate(email=email, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, "Welcome back!")
-                return redirect("home")
-            else:
-                messages.error(request, "Invalid email or password.")
-        else:
-            messages.error(request, "Invalid credentials.")
-    else:
-        form = EmailAuthenticationForm()
-
-    return render(request, "DevSign_Vote/login.html", {"form": form})
-
-def user_logout(request):
-    logout(request)
-    messages.success(request, "You have been logged out.")
-    return redirect("home")
-
-@login_required
-def profile(request):
-    user = request.user
-    profile_image_base64 = None
-
-    if user.profile_image:  
-        try:
-            image_bytes = user.profile_image.read()  
-            profile_image_base64 = base64.b64encode(image_bytes).decode("utf-8")  
-        except Exception as e:
-            print(f"Error encoding image: {e}") 
-
-    return render(request, "DevSign_Vote/profile.html", {"user": user, "profile_image_base64": profile_image_base64})
-
-
-def dashboard_view(request):
-    user = request.user
-    team_sessions = VotingSession.objects.filter(team_leader=user)
-    department_summary = TeamSummary.objects.filter(department_leader=user)
-    company_summary = DepartmentSummary.objects.all()
-
-    context = {
-        'user': user,
-        'team_sessions': team_sessions,
-        'department_summary': department_summary,
-        'company_summary': company_summary,
-    }
-    return render(request, 'DevSign_Vote/dashboard.html', context)
 
 @login_required
 @csrf_exempt
@@ -193,7 +220,8 @@ def vote_on_session(request, session_id):
         "cards": health_cards
     })
 
-@login_required(login_url='login')  
+
+@login_required(login_url='login')
 def session_select(request):
     now = timezone.now()
     sessions = Session.objects.filter(Status="Open", EndTime__gt=now)
@@ -214,6 +242,7 @@ def session_select(request):
         'departments': departments,
         'teams': teams,
     })
+
 
 @csrf_exempt
 @login_required
@@ -243,7 +272,7 @@ def join_session(request, session_id):
                 )
 
         messages.success(request, "Your votes have been submitted successfully!")
-        return redirect('/')  # or wherever you want
+        return redirect("portal")
 
     return render(request, 'DevSign_Vote/voting.html', {
         'session': session,
